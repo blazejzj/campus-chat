@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+/* 
+OUR THEME COLOR IS:
+#324f58
+*/
+
+:root {
+    --primary-color: #324f58;
+}
+
+.theme-bg-color {
+    background-color: var(--primary-color);
+}
+
+.theme-text-color {
+    color: var(--primary-color);
+}
