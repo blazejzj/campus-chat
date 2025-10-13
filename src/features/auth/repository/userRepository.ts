@@ -1,6 +1,5 @@
 import db from "@/server/db";
 import { users } from "@/server/db/schema";
-import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 
 export async function findUserByEmail(email: string) {
