@@ -7,9 +7,8 @@ export type AuthContext = {
 
 export async function getAuthContext(req: Request): Promise<AuthContext> {
     const authHeader = req.headers.get("authorization");
-    // we could potentially acll this token whatever we want, but lets make it traditional
-    // and call it a Bearer. If it doesn't exist it means user is not logged in, no token
-    // is available -> return null.
+    // we expect an auth header using the "bearer <token>" "scheme", which is goign to be out convention
+    // if its missing or basically not "Bearer" we treat it as unauthorized for token auth
     if (!authHeader?.startsWith("Bearer ")) return { user: null };
 
     const token = authHeader.substring("Bearer ".length);
