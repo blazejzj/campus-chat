@@ -31,7 +31,8 @@
         {
             "binding": "DB",
             "database_name": "campus-chat",
-            "database_id": "d5394c40-577b-47f7-b2c4-8702e50e5ae7"
+            "database_id": "d5394c40-577b-47f7-b2c4-8702e50e5ae7",
+            "migrations_dir": "drizzle"
         }
     ]
 }
