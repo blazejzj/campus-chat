@@ -36,6 +36,7 @@ export default function Register() {
                 body: JSON.stringify({
                     email: formData.email,
                     password: formData.password,
+                    confirmPassword: formData.confirmPassword,
                 }),
             });
 

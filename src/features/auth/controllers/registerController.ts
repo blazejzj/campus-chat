@@ -1,45 +1,22 @@
-import bcrypt from "bcryptjs";
-import { createUser, findUserByEmail } from "../repository/userRepository";
+import { RegisterDto } from "../dto";
+import { registerUser } from "../services/userService";
+import { json } from "../../../app/utils/responseJson";
 
 export async function registerController(req: Request): Promise<Response> {
-    const body = (await req.json()) as { email: string; password: string };
-    const email = body.email;
-    const password = body.password;
+    // validate first
+    const parse = RegisterDto.safeParse(await req.json());
+    if (!parse.success)
+        return json({ error: "ValidationError", details: parse.error }, 400);
 
-    // validate that fields are not empty
-    if (!email || !password) {
-        return new Response(JSON.stringify({ error: "Fields missing" }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-        });
+    // register user, make sure email is not in use
+    const result = await registerUser(parse.data);
+
+    if (!result.ok) {
+        if (result.reason === "EMAIL_IN_USE") {
+            return json({ error: "Email address already in use" }, 409); // 409 i assume conflict means email in use
+        }
+        return json({ error: "Registration failed" }, 400); // more generic error if something else comes in
     }
 
-    // check password length
-    if (password.length < 8) {
-        return new Response(JSON.stringify({ error: "Password too short" }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-        });
-    }
-
-    // check if user already exists with this email
-    const existingUser = await findUserByEmail(email);
-    if (existingUser) {
-        return new Response(
-            JSON.stringify({ error: "Email address already in use" }),
-            {
-                status: 409,
-                headers: { "Content-Type": "application/json" },
-            }
-        );
-    }
-
-    // create user
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await createUser(email, hashedPassword);
-
-    return new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-    });
+    return json({ id: result.id }, 201);
 }
