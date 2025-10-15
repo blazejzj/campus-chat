@@ -1,5 +1,11 @@
 "use client";
-import React, { useState } from "react";
+import { useAuth } from "@/app/hooks/useAuth";
+import { useState } from "react";
+
+type LoginResponse = {
+    token: string;
+    user: { id: number; email: string };
+};
 
 export default function Login() {
     const [formData, setFormData] = useState({
@@ -8,6 +14,7 @@ export default function Login() {
     });
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const { login } = useAuth();
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         const { name, value } = e.target;
@@ -34,7 +41,9 @@ export default function Login() {
                 throw new Error(data.error ?? "Login failed");
             }
 
-            // from teh docs we can use navigate, but i am unsure here...
+            const data = (await response.json()) as LoginResponse;
+            login(data.token, data.user);
+
             window.location.href = "/dashboard";
         } catch (e: any) {
             setError(e.message ?? "Something went wrong!");

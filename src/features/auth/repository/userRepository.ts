@@ -8,5 +8,14 @@ export async function findUserByEmail(email: string) {
 }
 
 export async function createUser(email: string, password: string) {
-    await db.insert(users).values({ email, password }); // We expect a hashesd password, duh.
+    try {
+        const res = await db
+            .insert(users)
+            .values({ email, password })
+            .returning({ id: users.id });
+        return res[0].id; // return users id for easy use
+    } catch (error: any) {
+        console.error("Database error while creating an user", error); // TODO: Better error here
+        throw new Error("DATABASE_ERROR");
+    }
 }
