@@ -1,6 +1,9 @@
 "use client";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useState } from "react";
+import CampusChatAllroundButton from "@/features/profile/components/CampusChatAllroundButton";
+import CampusChatAllroundInputField from "../components/CampusChatAllroundInputField";
+import { Ca } from "zod/v4/locales";
 
 export default function Profile() {
     const [name, setName] = useState("Leo");
@@ -29,43 +32,10 @@ export default function Profile() {
             {/* Form section cjhange name status etc. here.  */}
             <section>
                 <form className="space-y-4">
-                    <>
-                        <label className="block mb-1 text-sm font-medium">
-                            Name
-                        </label>
-                        <input
-                            className="w-full rounded border px-3 py-2 text-sm"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                        />
-                    </>
-
-                    <>
-                        <label className="block mb-1 text-sm font-medium">
-                            Status
-                        </label>
-                        <input
-                            className="w-full rounded border px-3 py-2 text-sm"
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                        />
-                    </>
-                    <>
-                        <label className="block mb-1 text-sm font-medium">
-                            Email
-                        </label>
-                        <input
-                            className="w-full rounded border px-3 py-2 text-sm"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-                    </>
-                    <button
-                        type="submit"
-                        className="mt-4 w-full rounded bg-[#2c454f] px-4 py-2 font-semibold text-white"
-                    >
-                        Save
-                    </button>
+                    <CampusChatAllroundInputField />
+                    <CampusChatAllroundInputField />
+                    <CampusChatAllroundInputField />
+                    <CampusChatAllroundButton />
                 </form>
             </section>
         </main>
