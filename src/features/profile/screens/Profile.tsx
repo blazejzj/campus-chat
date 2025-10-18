@@ -37,9 +37,27 @@ export default function Profile() {
                 {/* Form section cjhange name status etc. here.  */}
                 <section>
                     <form className="space-y-4">
-                        <CampusChatAllroundInputField />
-                        <CampusChatAllroundInputField />
-                        <CampusChatAllroundInputField />
+                        <CampusChatAllroundInputField
+                            props={{
+                                label: "Name",
+                                value: name,
+                                onChange: (e) => setName(e.target.value),
+                            }}
+                        />
+                        <CampusChatAllroundInputField
+                            props={{
+                                label: "Status",
+                                value: status,
+                                onChange: (e) => setStatus(e.target.value),
+                            }}
+                        />
+                        <CampusChatAllroundInputField
+                            props={{
+                                label: "Email",
+                                value: email,
+                                onChange: (e) => setEmail(e.target.value),
+                            }}
+                        />
                         <CampusChatAllroundButton />
                     </form>
                 </section>
