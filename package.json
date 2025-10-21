@@ -25,14 +25,21 @@
     "dependencies": {
         "@simplewebauthn/browser": "^13.1.0",
         "@simplewebauthn/server": "^13.1.1",
-        "@tailwindcss/vite": "^4.1.13",
+        "@tailwindcss/vite": "4.1.14",
         "bcryptjs": "^3.0.2",
-        "dotenv": "^17.2.2",
-        "drizzle-orm": "^0.44.5",
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "dotenv": "^17.2.3",
+        "drizzle-orm": "^0.44.6",
         "jose": "^6.1.0",
+        "lucide-react": "^0.545.0",
+        "nanoid": "^5.1.6",
+        "ohash": "^2.0.11",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
-        "rwsdk": "0.3.12",
+        "react-server-dom-webpack": "19.2.0",
+        "rwsdk": "1.0.0-beta.9",
+        "tailwind-merge": "^3.3.1",
         "tailwindcss": "^4.1.13",
         "zod": "^4.1.12"
     },
@@ -54,12 +61,10 @@
         "onlyBuiltDependencies": [
             "@prisma/client",
             "@prisma/engines",
-            "@tailwindcss/oxide",
             "esbuild",
             "prisma",
             "sharp",
             "workerd"
         ]
-    },
-    "packageManager": "pnpm@10.18.3+sha512.bbd16e6d7286fd7e01f6b3c0b3c932cda2965c06a908328f74663f10a9aea51f1129eea615134bf992831b009eabe167ecb7008b597f40ff9bc75946aadfb08d"
+    }
 }
