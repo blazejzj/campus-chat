@@ -1,6 +1,7 @@
 import { authApiV1 } from "@/features/auth/api/v1";
+import { profileApiV1 } from "@/features/profile/api/v1";
 
-const apiHandlers = [authApiV1];
+const apiHandlers = [authApiV1, profileApiV1];
 
 export async function apiV1(req: Request): Promise<Response | null> {
     const { pathname } = new URL(req.url);
