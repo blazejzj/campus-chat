@@ -7,9 +7,11 @@ import { createJwt } from "../utils/jwt";
 export async function registerUser({
     email,
     password,
+    displayName,
 }: {
     email: string;
     password: string;
+    displayName: string;
 }) {
     // chekc if user exists -> return false if email is in use
     const userExists = await findUserByEmail(email);
@@ -17,7 +19,8 @@ export async function registerUser({
 
     // hash password and return new users id for easy use
     const hashedPassword = await hashPassword(password);
-    const id = await createUser(email, hashedPassword);
+    // should we check if displayname is unique?
+    const id = await createUser(email, displayName, hashedPassword);
 
     return { ok: true, id };
 }
@@ -32,8 +35,7 @@ export async function loginUser({
     const user = await findUserByEmail(email);
     if (!user) return { ok: false, reason: "WRONG_CREDENTIALS" };
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
-
+    const passwordMatch = await bcrypt.compare(password, user.passwordHash);
     if (!passwordMatch) return { ok: false, reason: "WRONG_CREDENTIALS" };
 
     const token = await createJwt({ id: user.id, email: user.email });
