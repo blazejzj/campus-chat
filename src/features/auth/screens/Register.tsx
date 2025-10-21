@@ -1,136 +1,123 @@
 "use client";
+
 import { useState } from "react";
+import { useFetch } from "@/app/hooks/useFetch";
+import AuthCard from "../components/AuthCard";
+import FormField from "../components/FormField";
+import PrimaryButton from "../components/PrimaryButton";
 
 export default function Register() {
-    const [formData, setFormData] = useState({
+    const { request, loading, error, setError } = useFetch();
+
+    const [form, setForm] = useState({
         email: "",
+        displayName: "",
         password: "",
         confirmPassword: "",
     });
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        setForm(function update(prev) {
+            return { ...prev, [name]: value };
+        });
     }
 
-    async function onSubmit(e: React.FormEvent) {
+    async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError("");
-        setLoading(true);
 
-        // check first if passwords match
-        if (formData.password !== formData.confirmPassword) {
+        if (form.password !== form.confirmPassword) {
             setError("Passwords do not match");
-            setLoading(false);
             return;
         }
 
-        // try to register
+        const body = JSON.stringify({
+            email: form.email,
+            password: form.password,
+            confirmPassword: form.confirmPassword,
+        });
+
         try {
-            const response = await fetch("/api/v1/auth/register", {
+            await request("/api/v1/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({
-                    email: formData.email,
-                    password: formData.password,
-                    confirmPassword: formData.confirmPassword,
-                }),
+                body,
             });
 
-            if (!response.ok) {
-                const data = (await response.json().catch(() => ({}))) as {
-                    error?: string;
-                };
-                throw new Error(data.error ?? "Registration failed");
-            }
-
-            // we use again window.location, evn though I was sure i saw navigate, but it doesnt work
-            // or i am not competent enough lol
+            // using window.location here
+            // also, should we just log users in here immediately or just redirect them?
             window.location.href = "/login";
-        } catch (e: any) {
-            setError(e.message ?? "Something went wrong!");
-        } finally {
-            setLoading(false);
+        } catch {
+            // keep it simple: error is already set by the hook
         }
     }
 
     return (
-        <main className="mx-auto max-w-sm p-6">
-            <a href="/" className="text-sm">
-                Go Back
-            </a>
+        <AuthCard
+            title="Create an account"
+            footer={
+                <span>
+                    Already have an account?{" "}
+                    <a href="/login" className="font-semibold hover:underline">
+                        Log in
+                    </a>
+                </span>
+            }
+        >
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <FormField
+                    label="Email"
+                    name="email"
+                    type="email"
+                    placeholder="hughjass@hiof.no"
+                    value={form.email}
+                    onChange={handleChange}
+                    autoComplete="email"
+                />
+                <FormField
+                    label="Display name"
+                    name="displayName"
+                    type="text"
+                    placeholder="hughjass"
+                    value={form.displayName}
+                    onChange={handleChange}
+                />
+                <FormField
+                    label="Password"
+                    name="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={form.password}
+                    onChange={handleChange}
+                    minLength={8}
+                    autoComplete="new-password"
+                />
+                <FormField
+                    label="Confirm password"
+                    name="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={form.confirmPassword}
+                    onChange={handleChange}
+                    minLength={8}
+                    autoComplete="new-password"
+                />
 
-            <h2 className="text-2xl font-semibold mt-2 mb-4 theme-text-color">
-                Create an account
-            </h2>
+                {error ? (
+                    <p
+                        className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2"
+                        aria-live="polite"
+                    >
+                        {error}
+                    </p>
+                ) : null}
 
-            <form onSubmit={onSubmit} className="flex flex-col gap-3">
-                <label className="text-left space-y-1 w-full">
-                    <span className="text-sm font-medium text-gray-800">
-                        Email
-                    </span>
-                    <input
-                        name="email"
-                        className="w-full border rounded-xl px-3 py-2"
-                        type="email"
-                        placeholder="hughjass@hiof.no"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                    />
-                </label>
-
-                <label className="text-left space-y-1 w-full">
-                    <span className="text-sm font-medium text-gray-800">
-                        Password
-                    </span>
-                    <input
-                        name="password"
-                        className="w-full border rounded-xl px-3 py-2"
-                        type="password"
-                        placeholder="••••••••"
-                        value={formData.password}
-                        onChange={handleChange}
-                        required
-                        minLength={8}
-                    />
-                </label>
-
-                <label className="text-left space-y-1 w-full">
-                    <span className="text-sm font-medium text-gray-800">
-                        Confirm password
-                    </span>
-                    <input
-                        name="confirmPassword"
-                        className="w-full border rounded-xl px-3 py-2"
-                        type="password"
-                        placeholder="••••••••"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        required
-                        minLength={8}
-                    />
-                </label>
-
-                {error && <p className="text-sm text-red-600">{error}</p>}
-
-                <button
-                    className="rounded-xl theme-bg-color text-white py-2 disabled:opacity-60"
-                    disabled={loading}
-                >
-                    {loading ? "Creating account ..." : "Register"}
-                </button>
+                <PrimaryButton disabled={loading}>
+                    {loading ? "Creating account..." : "Register"}
+                </PrimaryButton>
             </form>
-
-            <p className="text-sm mt-3">
-                Already have an account?{" "}
-                <a href="/login" className="font-bold">
-                    Log in
-                </a>
-            </p>
-        </main>
+        </AuthCard>
     );
 }

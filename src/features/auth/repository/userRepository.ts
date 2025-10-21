@@ -1,5 +1,5 @@
 import db from "@/server/db";
-import { users } from "@/server/db/schema";
+import { users, profiles } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function findUserByEmail(email: string) {
@@ -7,13 +7,30 @@ export async function findUserByEmail(email: string) {
     return rows[0] ?? null;
 }
 
-export async function createUser(email: string, password: string) {
+export async function createUser(
+    email: string,
+    passwordHash: string,
+    displayName: string
+) {
+    // Step 1 -> create user
     try {
         const res = await db
             .insert(users)
-            .values({ email, password })
+            .values({
+                email,
+                passwordHash,
+                createdAt: new Date(),
+            })
             .returning({ id: users.id });
-        return res[0].id; // return users id for easy use
+        const userId = res[0].id;
+
+        // step 2 -> make profile
+
+        await db.insert(profiles).values({
+            userId,
+            displayName,
+            updatedAt: new Date(),
+        });
     } catch (error: any) {
         console.error("Database error while creating an user", error); // TODO: Better error here
         throw new Error("DATABASE_ERROR");

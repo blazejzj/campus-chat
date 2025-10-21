@@ -4,6 +4,11 @@ import z from "zod";
 export const RegisterDto = z
     .object({
         email: z.email(),
+        displayName: z
+            .string()
+            .trim()
+            .min(2, "Display name must be at least 2 characters")
+            .max(32, "Display name must be at most 32 characters"),
         password: z
             .string()
             .min(8, "Password must be atleast 8 characters long"),
