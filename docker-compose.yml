@@ -13,7 +13,6 @@ services:
       - .env
     stdin_open: true
     tty: true
-    restart: unless-stopped
-
+    restart: unless-stopped 
 volumes:
   node_modules_volume:
