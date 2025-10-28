@@ -4,12 +4,13 @@ import { json } from "../../../app/utils/responseJson";
 
 export async function registerController(req: Request): Promise<Response> {
     // validate first
-    const parse = RegisterDto.safeParse(await req.json());
-    if (!parse.success)
-        return json({ error: "ValidationError", details: parse.error }, 400);
+    const parsed = RegisterDto.safeParse(await req.json());
+    if (!parsed.success)
+        return json({ error: "ValidationError", details: parsed.error }, 400);
 
     // register user, make sure email is not in use
-    const result = await registerUser(parse.data);
+    const { email, password, displayName } = parsed.data;
+    const result = await registerUser({ email, password, displayName });
 
     if (!result.ok) {
         if (result.reason === "EMAIL_IN_USE") {

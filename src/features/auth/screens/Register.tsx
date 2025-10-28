@@ -36,6 +36,7 @@ export default function Register() {
             email: form.email,
             password: form.password,
             confirmPassword: form.confirmPassword,
+            displayName: form.displayName,
         });
 
         try {

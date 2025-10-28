@@ -20,7 +20,7 @@ export async function registerUser({
     // hash password and return new users id for easy use
     const hashedPassword = await hashPassword(password);
     // should we check if displayname is unique?
-    const id = await createUser(email, displayName, hashedPassword);
+    const id = await createUser(email, hashedPassword, displayName);
 
     return { ok: true, id };
 }
