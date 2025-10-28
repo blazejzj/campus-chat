@@ -27,9 +27,19 @@ export function AuthProvider({
         setUser(nextUser);
     };
 
-    const logout = () => {
-        // cookie is already cleared by /api/logout, so here we just clear user
+    // logs out user both client and server side, unsure if this is teh goto method
+    // or if should be done 2 different places but here we are
+    const logout = async () => {
+        try {
+            await fetch("/api/logout", {
+                method: "POST",
+                credentials: "include",
+            });
+        } catch (error) {
+            console.error("Logout failed:", error);
+        }
         setUser(null);
+        location.replace("/login");
     };
 
     return (

@@ -1,6 +1,7 @@
 import { json } from "@/app/utils/responseJson";
 import { LoginDto } from "../dto";
 import { loginUser } from "../services/userService";
+import { serialize } from "cookie";
 
 export async function loginController(req: Request): Promise<Response> {
     // validate login inpputs first
@@ -18,5 +19,14 @@ export async function loginController(req: Request): Promise<Response> {
         return json({ error: "Logging in failed" }, 500);
     }
 
-    return json({ token: result.token, user: result.user }, 200);
+    // we need to set the cookie (HTTPONLY)
+    const cookie = serialize("auth", result.token!, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7, // 1 week
+    });
+
+    return json({ user: result.user }, 200, { "Set-Cookie": cookie });
 }

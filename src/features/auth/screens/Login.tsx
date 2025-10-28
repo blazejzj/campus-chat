@@ -8,7 +8,7 @@ import FormField from "../components/FormField";
 import PrimaryButton from "../components/PrimaryButton";
 
 type LoginResponse = {
-    token: string;
+    // token: string;
     user: { id: number; email: string };
 };
 
@@ -37,7 +37,7 @@ export default function Login() {
                 body,
             });
 
-            login(data.token, data.user);
+            await login(data.user);
             window.location.href = "/dashboard";
         } catch {
             // keep it simple here i think, the error is already set by the hook
