@@ -1,29 +1,28 @@
+import { json } from "@/app/utils/responseJson";
 import { authApiV1 } from "@/features/auth/api/v1";
 import { profileApiV1 } from "@/features/profile/api/v1";
 
-const apiHandlers = [authApiV1, profileApiV1];
+const apiHandlers = {
+    auth: authApiV1,
+    profile: profileApiV1,
+    // add more feature api handlers here
+};
 
 export async function apiV1(req: Request): Promise<Response | null> {
     const { pathname } = new URL(req.url);
 
     // if no /api/v1 provided, answer with 404, because route("api/*") will catch everything anyways
     if (!pathname.startsWith("/api/v1/")) {
-        return new Response(JSON.stringify({ error: "Not found" }), {
-            status: 404,
-            headers: { "Content-Type": "application/json" },
-        });
+        return json({ error: "Not found" }, 404);
     }
 
-    // loop through each feature apHandlers
-    for (const featureApi of apiHandlers) {
-        const res = await featureApi(req);
-        if (res) {
-            return res;
-        }
+    const pathParts = pathname.slice("/api/v1/".length).split("/");
+    const feature = pathParts[0];
+
+    const handler = apiHandlers[feature as keyof typeof apiHandlers];
+    if (handler) {
+        return handler(req);
     }
 
-    return new Response(JSON.stringify({ error: "Not found" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-    });
+    return json({ error: "Not found" }, 404);
 }

@@ -8,7 +8,7 @@ import FormField from "../components/FormField";
 import PrimaryButton from "../components/PrimaryButton";
 
 type LoginResponse = {
-    token: string;
+    // token: string;
     user: { id: number; email: string };
 };
 
@@ -27,18 +27,16 @@ export default function Login() {
         e.preventDefault();
         setError("");
 
-        const body = JSON.stringify(form);
-
         try {
             const data = await request<LoginResponse>("/api/v1/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body,
+                body: JSON.stringify(form),
             });
 
-            login(data.token, data.user);
-            window.location.href = "/dashboard";
+            login(data.user);
+            location.replace("/dashboard");
         } catch {
             // keep it simple here i think, the error is already set by the hook
         }

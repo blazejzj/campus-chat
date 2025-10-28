@@ -14,12 +14,13 @@ export async function createUser(
 ) {
     // Step 1 -> create user
     try {
+        const now = new Date();
         const res = await db
             .insert(users)
             .values({
                 email,
                 passwordHash,
-                createdAt: new Date(),
+                createdAt: now,
             })
             .returning({ id: users.id });
         const userId = res[0].id;
@@ -29,7 +30,7 @@ export async function createUser(
         await db.insert(profiles).values({
             userId,
             displayName,
-            updatedAt: new Date(),
+            updatedAt: now,
         });
     } catch (error: any) {
         console.error("Database error while creating an user", error); // TODO: Better error here

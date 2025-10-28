@@ -1,16 +1,17 @@
 import { defineApp } from "rwsdk/worker";
-import { route, render } from "rwsdk/router";
+import { route, render, layout } from "rwsdk/router";
 import { Document } from "@/app/Document";
 import LandingPage from "./app/pages/LandingPage";
 import LoginPage from "./app/pages/LoginPage";
 import RegisterPage from "./app/pages/RegisterPage";
 import DashboardPage from "./app/pages/DashboardPage";
 import { apiV1 } from "./server/api/v1";
-import { AppWrapped } from "./app/AppWrapped";
-import ProfilePage from "./app/pages/ProfilePage";
-const withApp = (node: React.ReactNode) => <AppWrapped>{node}</AppWrapped>;
+import { AuthLayout } from "./features/auth/screens/AuthLayout";
+import { authMiddleware } from "./app/middleware/authMiddleware";
+import NotFoundPage from "./app/pages/NotFoundPage";
 
 export default defineApp([
+    authMiddleware(),
     route("/api/*", async ({ request }) => {
         const res = await apiV1(request);
         return (
@@ -23,10 +24,12 @@ export default defineApp([
     }),
 
     render(Document, [
-        route("/", () => withApp(<LandingPage />)),
-        route("/login", () => withApp(<LoginPage />)),
-        route("/register", () => withApp(<RegisterPage />)),
-        route("/dashboard", () => withApp(<DashboardPage />)),
-        route("/profile", () => withApp(<ProfilePage />)),
+        layout(AuthLayout, [
+            route("/", () => <LandingPage />),
+            route("/login", () => <LoginPage />),
+            route("/register", () => <RegisterPage />),
+            route("/dashboard", () => <DashboardPage />),
+            route("/*", () => <NotFoundPage />),
+        ]),
     ]),
 ]);
