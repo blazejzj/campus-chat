@@ -27,6 +27,7 @@
         "@simplewebauthn/server": "^13.1.1",
         "@tailwindcss/vite": "^4.1.13",
         "bcryptjs": "^3.0.2",
+        "cookie": "^1.0.2",
         "dotenv": "^17.2.2",
         "drizzle-orm": "^0.44.5",
         "jose": "^6.1.0",

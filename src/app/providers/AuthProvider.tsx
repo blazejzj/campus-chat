@@ -1,37 +1,34 @@
 "use client";
 
-import { createContext, useEffect, useState } from "react";
+import { createContext, useState } from "react";
 import { User as CoreUser } from "../../../types/User";
 
 type AuthUser = CoreUser | null;
 
 type AuthContextType = {
     user: AuthUser;
-    login: (token: string, user: CoreUser) => void;
+    login: (user: CoreUser) => void;
     logout: () => void;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<AuthUser>(null);
+export function AuthProvider({
+    children,
+    initialUser = null,
+}: {
+    children: React.ReactNode;
+    initialUser?: CoreUser | null;
+}) {
+    const [user, setUser] = useState<AuthUser>(initialUser);
 
-    useEffect(() => {
-        // TODO: Change to cookie? Better for security
-        const storedToken = localStorage.getItem("auth");
-        if (storedToken) {
-            const parsed = JSON.parse(storedToken);
-            setUser(parsed.user);
-        }
-    }, []);
-
-    const login = (token: string, nextUser: CoreUser) => {
-        localStorage.setItem("auth", JSON.stringify({ token, user: nextUser }));
+    const login = (nextUser: CoreUser) => {
+        // cookie is already set by /api/login, so here we just hydrate
         setUser(nextUser);
     };
 
     const logout = () => {
-        localStorage.removeItem("auth");
+        // cookie is already cleared by /api/logout, so here we just clear user
         setUser(null);
     };
 

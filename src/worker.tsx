@@ -7,8 +7,10 @@ import RegisterPage from "./app/pages/RegisterPage";
 import DashboardPage from "./app/pages/DashboardPage";
 import { apiV1 } from "./server/api/v1";
 import { AuthLayout } from "./features/auth/screens/AuthLayout";
+import { authMiddleware } from "./app/middleware/authMiddleware";
 
 export default defineApp([
+    authMiddleware(),
     route("/api/*", async ({ request }) => {
         const res = await apiV1(request);
         return (
