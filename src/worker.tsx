@@ -8,6 +8,7 @@ import DashboardPage from "./app/pages/DashboardPage";
 import { apiV1 } from "./server/api/v1";
 import { AuthLayout } from "./features/auth/screens/AuthLayout";
 import { authMiddleware } from "./app/middleware/authMiddleware";
+import NotFoundPage from "./app/pages/NotFoundPage";
 
 export default defineApp([
     authMiddleware(),
@@ -28,6 +29,7 @@ export default defineApp([
             route("/login", () => <LoginPage />),
             route("/register", () => <RegisterPage />),
             route("/dashboard", () => <DashboardPage />),
+            route("/*", () => <NotFoundPage />),
         ]),
     ]),
 ]);
