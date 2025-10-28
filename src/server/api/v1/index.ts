@@ -1,8 +1,10 @@
 import { json } from "@/app/utils/responseJson";
 import { authApiV1 } from "@/features/auth/api/v1";
+import { profileApiV1 } from "@/features/profile/api/v1";
 
 const apiHandlers = {
     auth: authApiV1,
+    profile: profileApiV1,
     // add more feature api handlers here
 };
 
