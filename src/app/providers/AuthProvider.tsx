@@ -31,12 +31,12 @@ export function AuthProvider({
     // or if should be done 2 different places but here we are
     const logout = async () => {
         try {
-            await fetch("/api/logout", {
+            await fetch("/api/v1/auth/logout", {
                 method: "POST",
                 credentials: "include",
             });
         } catch (error) {
-            console.error("Logout failed:", error);
+            // ignore errors here for now
         }
         setUser(null);
         location.replace("/login");
