@@ -1,6 +1,7 @@
 "use client";
 import { AuthProvider } from "@/app/providers/AuthProvider";
+import { LayoutProps } from "rwsdk/router";
 
-export function AppWrapped({ children }: { children: React.ReactNode }) {
+export function AuthLayout({ children }: LayoutProps) {
     return <AuthProvider>{children}</AuthProvider>;
 }
