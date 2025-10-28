@@ -1,4 +1,3 @@
-"use client";
 import { AuthProvider } from "@/app/providers/AuthProvider";
 import type { LayoutProps } from "rwsdk/router";
 
