@@ -1,5 +1,5 @@
-import { findUserByEmail } from "@/features/auth/repository/userRepository";
 import { verifyJwt } from "@/features/auth/utils/jwt";
+import authRepository from "@/features/auth/repository/authRepository";
 
 export type AuthContext = {
     user: { id: number; email: string } | null;
@@ -21,7 +21,7 @@ export async function getAuthContext(req: Request): Promise<AuthContext> {
     if (!jwtPayload?.email) return { user: null };
 
     // note sure we need this...
-    const user = await findUserByEmail(jwtPayload.email);
+    const user = await authRepository.findUserByEmail(jwtPayload.email);
     if (!user) return { user: null };
 
     return { user: { id: user.id, email: user.email } };
