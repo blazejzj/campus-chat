@@ -4,11 +4,37 @@ import { useState } from "react";
 import CampusChatAllroundButton from "@/features/profile/components/CampusChatAllroundButton";
 import CampusChatAllroundInputField from "../components/CampusChatAllroundInputField";
 import SideBar from "../components/SideBar";
+import { useFetch } from "@/app/hooks/useFetch";
+import { useEffect } from "react";
+import { string } from "zod";
 
 export default function Profile() {
+    const { user } = useAuth();
+    const { request, loading, error } = useFetch();
+
     const [name, setName] = useState("Leo");
     const [status, setStatus] = useState("online");
     const [email, setEmail] = useState("LeoD@hiof.no");
+
+    useEffect(() => {
+        async function loadProfile() {
+            try {
+                const data = await request<{
+                    email: string;
+                    displayName?: string;
+                    status?: string;
+                }>("/api/v1/profile", {
+                    credentials: "include",
+                });
+
+                setEmail(data.email || "");
+                setName(data.displayName || "");
+                setStatus(data.status || "");
+            } catch {}
+        }
+
+        loadProfile();
+    }, [request]);
 
     return (
         //Sidebar componetn goes here: unsure of exact placement (within/witout main)
