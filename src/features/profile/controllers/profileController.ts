@@ -1,12 +1,15 @@
 import { getAuthContext } from "@/server/context";
-import { findUserByEmail } from "@/features/auth/repository/userRepository";
+import authRepository from "@/features/auth/repository/authRepository";
 import { json } from "@/app/utils/responseJson";
+import { RequestInfo } from "rwsdk/worker";
 
-export async function ProfileController(req: Request): Promise<Response> {
-    const { user } = await getAuthContext(req);
+export async function ProfileController({
+    request,
+}: RequestInfo): Promise<Response> {
+    const { user } = await getAuthContext(request);
     if (!user?.email) return json({ error: "Unauthorized" }, 401);
 
-    const dbUser = await findUserByEmail(user.email);
+    const dbUser = await authRepository.findUserByEmail(user.email);
     if (!dbUser) return json({ error: "User not found" }, 404);
 
     return json({
