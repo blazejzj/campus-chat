@@ -86,6 +86,7 @@ export const roomRepository = {
         .select({
           id: rooms.id,
           name: rooms.name,
+          visibility: rooms.visibility,
           createdBy: rooms.createdBy,
           createdAt: rooms.createdAt,
         })

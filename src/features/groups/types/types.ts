@@ -11,3 +11,10 @@ export type CreateRoomSuccess = {
 export type CreateRoomResult = CreateRoomSuccess | CreateRoomFail;
 
 export type AddRoomMemberResult = { ok: true } | { ok: false, reason: "ALREADY_MEMBER" | "ROOM_NOT_FOUND" | "DATABASE_ERROR" };
+
+export type RoomResponse = {
+  id: string;
+  name: string;
+  visibility?: "public" | "private";
+  createdBy?: string | null;
+};
