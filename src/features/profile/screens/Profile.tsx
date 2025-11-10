@@ -114,6 +114,7 @@ export default function Profile() {
                         <CampusChatAllroundInputField
                             props={{
                                 label: "Email",
+                                disabled: true,
                                 value: email,
                                 onChange: (e) => setEmail(e.target.value),
                             }}

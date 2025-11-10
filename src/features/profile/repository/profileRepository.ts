@@ -15,6 +15,13 @@ async function updateProfileByUserId(
     userId: number,
     updates: { displayName?: string; status?: string; avatarUrl?: string }
 ) {
+    console.log("in profileRepository.updateProfileByUserId");
+    console.log(
+        "Updating profile for userId:",
+        userId,
+        "with updates:",
+        updates
+    );
     await db
         .update(profileSchema)
         .set(updates)
@@ -22,4 +29,19 @@ async function updateProfileByUserId(
         .run();
 }
 
-export default { findProfileByUserId, updateProfileByUserId };
+async function createProfile(userId: number, displayName?: string) {
+    console.log("in profileRepository.createProfile");
+    console.log("Creating profile for userId:", userId);
+    await db
+        .insert(profileSchema)
+        .values({
+            userId,
+            displayName: displayName || "",
+            status: "offline",
+            avatarUrl: "",
+            updatedAt: new Date(),
+        })
+        .run();
+}
+
+export default { findProfileByUserId, updateProfileByUserId, createProfile };
