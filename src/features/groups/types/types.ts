@@ -18,3 +18,11 @@ export type RoomResponse = {
   visibility?: "public" | "private";
   createdBy?: string | null;
 };
+
+export type RoomFromRepo = {
+  id: number;
+  name: string;
+  visibility: string | null;
+  createdBy: number | null;
+  createdAt: Date | number | null;
+};

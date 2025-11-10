@@ -22,28 +22,24 @@ export const roomRepository = {
       const now = new Date();
       const creatorId = parseInt(data.createdBy);
 
-      const roomId = await db.transaction(async (tx) => {
-        const [newRoom] = await tx
-          .insert(rooms)
-          .values({
-            name: data.name,
-            visibility: data.visibility,
-            createdBy: creatorId,
-            createdAt: now,
-          })
-          .returning({ id: rooms.id });
+      const [newRoom] = await db
+        .insert(rooms)
+        .values({
+          name: data.name,
+          visibility: data.visibility,
+          createdBy: creatorId,
+          createdAt: now,
+        })
+        .returning({ id: rooms.id });
 
-        await tx.insert(roomMemberships).values({
-          roomId: newRoom.id,
-          userId: creatorId,
-          role: "owner",
-          joinedAt: now,
-        });
-
-        return newRoom.id;
+      await db.insert(roomMemberships).values({
+        roomId: newRoom.id,
+        userId: creatorId,
+        role: "owner",
+        joinedAt: now,
       });
 
-      return roomId;
+      return newRoom.id;
     } catch (error) {
       console.error("Error creating room:", error);
       throw new Error("DATABASE_ERROR");
