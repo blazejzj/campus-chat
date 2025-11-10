@@ -1,10 +1,26 @@
-export default function CampusChatAllroundButton() {
+type Props = {
+    children: React.ReactNode;
+    type?: "button" | "submit" | "reset";
+    onClick?: () => void;
+    disabled?: boolean;
+    className?: string;
+};
+
+export default function CampusChatAllroundButton({
+    children,
+    type = "button",
+    onClick,
+    disabled = false,
+    className = "",
+}: Props) {
     return (
         <button
-            type="submit"
-            className="mt-4 w-full rounded bg-[#2c454f] px-4 py-2 font-semibold text-white"
+            type={type}
+            onClick={onClick}
+            disabled={disabled}
+            className={`w-full rounded-xl theme-bg-color text-white py-2.5 font-semibold hover:opacity-90 transition disabled:opacity-60 ${className}`}
         >
-            CampusChatAllroundSave
+            {children}
         </button>
     );
 }

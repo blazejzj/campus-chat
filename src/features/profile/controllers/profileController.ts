@@ -15,11 +15,21 @@ export async function ProfileController({
             const body = (await request.json()) as {
                 displayName?: string;
                 status?: string;
+                // NOTE: email?: string; Email update not supported yet.. we dunno.
                 avatarUrl?: string;
             };
 
             await profileRepository.updateProfileByUserId(user.id, body);
-            return json({ success: true });
+
+            const updated = await profileRepository.findProfileByUserId(
+                user.id
+            );
+            return json({
+                email: user.email ?? "",
+                displayName: updated?.displayName ?? "",
+                status: updated?.status ?? "",
+                avatarUrl: updated?.avatarUrl ?? "",
+            });
         } catch {
             return json({ error: "FAiled to update profile" }, 400);
         }
@@ -29,6 +39,7 @@ export async function ProfileController({
     if (!profile) return json({ error: "Profile not found" }, 404);
 
     return json({
+        email: user.email ?? "",
         displayName: profile.displayName ?? "",
         status: profile.status ?? "",
         avatarUrl: profile.avatarUrl ?? "",
