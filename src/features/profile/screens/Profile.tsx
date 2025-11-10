@@ -77,7 +77,7 @@ export default function Profile() {
             <main className="flex-1 p-6">
                 {/* Header section here */}
                 <section className=" border-b">
-                    <h1 className="mb-4 text-4xl font-bold">
+                    <h1 className="mb-4 text-4xl font-bold theme-text-color">
                         Profile Settings
                     </h1>
                     {/* Need separation line here, vert and horizontaøl. */}
