@@ -1,15 +1,17 @@
 "use client";
 import { useAuth } from "@/app/hooks/useAuth";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import CampusChatAllroundButton from "@/features/profile/components/CampusChatAllroundButton";
 import CampusChatAllroundInputField from "../components/CampusChatAllroundInputField";
 import SideBar from "../components/SideBar";
 import { useFetch } from "@/app/hooks/useFetch";
 import { useEffect } from "react";
+import { toast } from "react-toastify";
 
 export default function Profile() {
     const { user } = useAuth();
     const { request, loading, error } = useFetch();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     console.log(user);
     if (!user) {
@@ -19,6 +21,8 @@ export default function Profile() {
     const [name, setName] = useState("Leo");
     const [status, setStatus] = useState("online");
     const [email, setEmail] = useState("LeoD@hiof.no");
+    const [avatarUrl, setAvatarUrl] = useState("");
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
     useEffect(() => {
         async function loadProfile() {
@@ -70,6 +74,55 @@ export default function Profile() {
         }
     };
 
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+        const ALLOWED_TYPES = ["image/jpeg", "image/png"];
+
+        const isValidType = ALLOWED_TYPES.includes(file.type);
+        const isValidSize = file.size <= MAX_FILE_SIZE;
+
+        if (!isValidType) {
+            toast.error(
+                "Invalid file type. Please select a JPEG or a PNG image."
+            );
+            return;
+        }
+
+        if (!isValidSize) {
+            toast.error(
+                "File size larger than the 5MB limit. Please select a smaller image/avatar?."
+            );
+            return;
+        }
+        setUploadingAvatar(true);
+        try {
+            const formData = new FormData();
+            formData.append("avatar", file);
+
+            const response = await request<{ avatarUrl: string }>(
+                "/api/v1/profile/avatar",
+                {
+                    method: "POST",
+                    body: formData,
+                    credentials: "include",
+                }
+            );
+
+            setAvatarUrl(response.avatarUrl);
+        } catch (error) {
+            console.error("Failed to upload avatar:", error);
+        } finally {
+            setUploadingAvatar(false);
+        }
+    };
+
     return (
         //Sidebar componetn goes here: unsure of exact placement (within/witout main)
         <div className="flex min-h-screen">
@@ -85,13 +138,30 @@ export default function Profile() {
 
                 {/* ProfilePic section here */}
                 <section className="mb-6 mt-6 flex items-center gap-4">
-                    <div className="h-20 w-20 rounded-full bg-gray-300" />
-                    <button
-                        type="button"
-                        className="rounded border border-gray-300 px-3 py-1 text-sm font-medium"
+                    <div className="h-20 w-20 rounded-full bg-gray-300 overflow-hidden" />
+                    {avatarUrl ? (
+                        <img
+                            src={avatarUrl}
+                            alt="Profile Pic/avatar"
+                            className="h-full w-full object-cover"
+                        />
+                    ) : (
+                        <div className="h-full w-full bg-gray-300" />
+                    )}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png"
+                        className="hidden"
+                        onChange={handleFileChange}
+                    />
+                    <CampusChatAllroundButton
+                        size="small"
+                        onClick={handleAvatarClick}
+                        disabled={uploadingAvatar}
                     >
-                        Change
-                    </button>
+                        {uploadingAvatar ? "Uploading..." : "Change picture"}
+                    </CampusChatAllroundButton>
                 </section>
 
                 {/* Form section cjhange name status etc. here.  */}
@@ -122,6 +192,7 @@ export default function Profile() {
                         <CampusChatAllroundButton
                             type="submit"
                             disabled={loading}
+                            size="large"
                         >
                             {loading ? "Saving..." : "Save"}
                         </CampusChatAllroundButton>
