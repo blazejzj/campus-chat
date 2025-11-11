@@ -13,7 +13,12 @@ async function findProfileByUserId(userId: number) {
 
 async function updateProfileByUserId(
     userId: number,
-    updates: { displayName?: string; status?: string; avatarUrl?: string }
+    updates: {
+        displayName?: string;
+        status?: string;
+        avatarUrl?: string;
+        notificationsEnabled?: boolean;
+    }
 ) {
     console.log("in profileRepository.updateProfileByUserId");
     console.log(
@@ -39,6 +44,7 @@ async function createProfile(userId: number, displayName?: string) {
             displayName: displayName || "",
             status: "offline",
             avatarUrl: "",
+            notificationsEnabled: true,
             updatedAt: new Date(),
         })
         .run();

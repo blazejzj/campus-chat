@@ -6,7 +6,6 @@ export async function ProfileController({
     request,
     ctx,
 }: RequestInfo): Promise<Response> {
-    // Use ctx.user from middleware instead of getAuthContext - BUGG IS HERE??
     const user = ctx.user as { id: number; email: string } | undefined;
 
     if (!user?.id) {
@@ -31,6 +30,7 @@ export async function ProfileController({
                 displayName: updated?.displayName ?? "",
                 status: updated?.status ?? "",
                 avatarUrl: updated?.avatarUrl ?? "",
+                notificationsEnabled: updated?.notificationsEnabled ?? true,
             });
         } catch {
             return json({ error: "Failed to update profile" }, 400);
@@ -47,5 +47,6 @@ export async function ProfileController({
         displayName: profile.displayName ?? "",
         status: profile.status ?? "",
         avatarUrl: profile.avatarUrl ?? "",
+        notificationsEnabled: profile.notificationsEnabled ?? true,
     });
 }

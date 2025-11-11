@@ -15,7 +15,7 @@ export default function Profile() {
 
     console.log(user);
     if (!user) {
-        return <div>Please log in to access your profile.</div>;
+        return <div>Please log in to access your profile.</div>; // for new solition when calling profileRepo.createprofile - this should never be needed.. everyone on register has a profile created auto.
     }
 
     const [name, setName] = useState("Leo");
@@ -23,6 +23,7 @@ export default function Profile() {
     const [email, setEmail] = useState("LeoD@hiof.no");
     const [avatarUrl, setAvatarUrl] = useState("");
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
     useEffect(() => {
         async function loadProfile() {
@@ -31,6 +32,8 @@ export default function Profile() {
                     email: string;
                     displayName?: string;
                     status?: string;
+                    avatarUrl?: string;
+                    notificationsEnabled?: boolean;
                 }>("/api/v1/profile", {
                     credentials: "include",
                 });
@@ -39,6 +42,8 @@ export default function Profile() {
                 setEmail(data.email || "");
                 setName(data.displayName || "");
                 setStatus(data.status || "");
+                setAvatarUrl(data.avatarUrl || "");
+                setNotificationsEnabled(data.notificationsEnabled ?? true);
             } catch (error) {
                 console.error("Failed to load profile:", error);
             }
@@ -55,12 +60,14 @@ export default function Profile() {
                 displayName?: string;
                 status?: string;
                 avatarUrl?: string;
+                notificationsEnabled?: boolean;
             }>("/api/v1/profile", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     displayName: name,
                     status: status,
+                    notificationsEnabled,
                     //email: email, (email update not supported yet - perhaps later..we are not sure here ??
                 }),
                 credentials: "include",
@@ -69,8 +76,11 @@ export default function Profile() {
             if (updated.displayName !== undefined) setName(updated.displayName);
             if (updated.status !== undefined) setStatus(updated.status);
             if (updated.email !== undefined) setEmail(updated.email);
+            if (updated.notificationsEnabled !== undefined)
+                setNotificationsEnabled(updated.notificationsEnabled);
         } catch (error) {
             console.error("Failed to update profile:", error);
+            toast.error("Failed to update profile!");
         }
     };
 
@@ -189,6 +199,36 @@ export default function Profile() {
                                 onChange: (e) => setEmail(e.target.value),
                             }}
                         />
+
+                        {/* Notification toggle heree, field for this added in profileSchema, migrations ok, hopefulluy no errors on this one on merge.. */}
+                        <div className="flex items-center gap-3">
+                            <label className="font-medium">Notifications</label>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setNotificationsEnabled(
+                                        !notificationsEnabled
+                                    )
+                                }
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                    notificationsEnabled
+                                        ? "bg-green-500"
+                                        : "bg-gray-300"
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        notificationsEnabled
+                                            ? "translate-x-6"
+                                            : "translate-x-1"
+                                    }`}
+                                />
+                            </button>
+                            <span className="text-sm text-gray-600">
+                                {notificationsEnabled ? "Enabled" : "Disabled"}
+                            </span>
+                        </div>
+
                         <CampusChatAllroundButton
                             type="submit"
                             disabled={loading}

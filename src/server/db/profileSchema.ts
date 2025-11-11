@@ -6,5 +6,8 @@ export const profileSchema = sqliteTable("profile", {
     displayName: text("display_name"),
     avatarUrl: text("avatar_url"),
     status: text("status"),
+    notificationsEnabled: integer("notifications_enabled", {
+        mode: "boolean",
+    }).default(true),
     updatedAt: integer("updated_at", { mode: "timestamp" }),
 });
