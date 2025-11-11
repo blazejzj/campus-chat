@@ -6,7 +6,7 @@ async function getInternalIdFromExternalId(externalId: string): Promise<string> 
     if (!externalId) {
         throw new Error("USER_NOT_FOUND"); 
     }
-    return '1'; 
+    return externalId; 
 }
 
 function mapVisibility(value: string | null): "public" | "private" | undefined {

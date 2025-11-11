@@ -31,25 +31,13 @@ export default function DashboardPage() {
                 <header className="px-4 py-4 border-gray-200 border-b">
                     <h1 className="text-2xl font-extrabold theme-text-color">CampusChat</h1>
                 </header>
-                
-                <div className="grow overflow-y-auto">
-                    <nav className="p-4 space-y-1">
-                         <div className="px-3 py-2 text-sm text-gray-400 font-semibold">Groups/Rooms</div>
-                        <a href="#" className="flex items-center p-3 rounded-xl text-gray-700 hover:bg-gray-100 transition">
-                             Webapp H25
-                        </a>
-                        <a href="#" className="flex items-center p-3 rounded-xl text-gray-700 hover:bg-gray-100 transition">
-                             MobilProg H25
-                        </a>
-                    </nav>
-                    <RoomsSidebar 
+                        <RoomsSidebar 
                         selectedRoomId={selectedRoomId}
                         onSelectRoom={setSelectedRoomId}
                     />
-                </div>
             </div>
 
-            {/* Chat Area */}
+            {/* Chat Area - just for display purpose for now*/}
             <div className="grow flex flex-col relative">
                 
                 <header className="flex justify-between items-center p-4 border-gray-200 border-b bg-white shadow-lg">
@@ -109,7 +97,6 @@ export default function DashboardPage() {
                         className="grow p-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-300 focus:ring-2 focus:ring-green-500 focus:outline-none"
                     />
                     <button 
-                        // Bruker theme-bg-color direkte
                         className="ml-3 px-6 py-3 rounded-xl font-semibold text-white theme-bg-color hover:opacity-90 transition"
                     >
                         Send

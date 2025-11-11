@@ -1,32 +1,33 @@
-interface Room {
-    id: string | number;
-    name: string;
-    visibility: 'public' | 'private';
-}
+import { Room } from '../components/RoomSidebar';
+import RoomDetailsPanel from './RoomDetailsPanel';
 
 interface RoomCardProps {
-    room: Room;
-    isSelected: boolean;
-    onSelect: (roomId: string | number) => void;
+  room: Room;
+  isSelected: boolean;
+  onSelect: (roomId: string | number) => void;
 }
 
 export default function RoomCard({ room, isSelected, onSelect }: RoomCardProps) {
-    const visibilityText = room.visibility === 'private' ? 'Låst' : 'Åpen';
-    const visibilityColor = room.visibility === 'private' ? 'bg-red-700' : 'bg-green-700';
-    
-    return (
-        <button
-            onClick={() => onSelect(room.id)}
-            className={`w-full text-left p-3 rounded-xl transition duration-150 ease-in-out flex items-center space-x-3 border border-transparent 
-                ${isSelected 
-                    ? 'bg-blue-600 text-white font-semibold shadow-xl border-blue-400' 
-                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300 shadow-md'}`
-            }
+  const bgColor = isSelected ? 'bg-gray-800' : 'bg-white hover:bg-gray-100';
+  const textColor = isSelected ? 'text-white' : 'text-gray-800';
+  const visibilityColor = room.visibility === 'public' ? 'bg-green-600' : 'bg-red-600';
+  const visibilityText = room.visibility === 'public' ? 'Public' : 'Privte';
+
+  return (
+    <div className={`rounded-xl transition shadow-md cursor-pointer ${isSelected ? 'p-1' : 'p-0'}`}>
+      <div 
+        onClick={() => onSelect(room.id)}
+        className={`flex items-center p-3 rounded-xl transition ${bgColor} ${textColor}`}
+      >
+        <span 
+          className={`px-2 py-1 text-xs font-bold rounded-lg mr-3 text-white ${visibilityColor}`}
         >
-            <span className={`text-xs font-mono px-2 py-1 rounded-full shrink-0 ${visibilityColor} text-white`}>
-                {visibilityText}
-            </span>
-            <span className="truncate text-base grow">{room.name}</span>
-        </button>
-    );
+          {visibilityText}
+        </span>
+        <span className="font-semibold truncate">{room.name}</span>
+      </div>
+
+      {isSelected && <RoomDetailsPanel roomId={room.id} />}
+    </div>
+  );
 }
