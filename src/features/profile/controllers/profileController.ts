@@ -1,18 +1,52 @@
-import { getAuthContext } from "@/server/context";
-import { findUserByEmail } from "@/features/auth/repository/userRepository";
 import { json } from "@/app/utils/responseJson";
+import { RequestInfo } from "rwsdk/worker";
+import profileRepository from "@/features/profile/repository/profileRepository";
 
-export async function ProfileController(req: Request): Promise<Response> {
-    const { user } = await getAuthContext(req);
-    if (!user?.email) return json({ error: "Unauthorized" }, 401);
+export async function ProfileController({
+    request,
+    ctx,
+}: RequestInfo): Promise<Response> {
+    const user = ctx.user as { id: number; email: string } | undefined;
 
-    const dbUser = await findUserByEmail(user.email);
-    if (!dbUser) return json({ error: "User not found" }, 404);
+    if (!user?.id) {
+        return json({ error: "Unauthorized" }, 401);
+    }
+
+    if (request.method === "PATCH") {
+        try {
+            const body = (await request.json()) as {
+                displayName?: string;
+                status?: string;
+                avatarUrl?: string;
+            };
+
+            await profileRepository.updateProfileByUserId(user.id, body);
+
+            const updated = await profileRepository.findProfileByUserId(
+                user.id
+            );
+            return json({
+                email: user.email ?? "",
+                displayName: updated?.displayName ?? "",
+                status: updated?.status ?? "",
+                avatarUrl: updated?.avatarUrl ?? "",
+                notificationsEnabled: updated?.notificationsEnabled ?? true,
+            });
+        } catch {
+            return json({ error: "Failed to update profile" }, 400);
+        }
+    }
+
+    const profile = await profileRepository.findProfileByUserId(user.id);
+    if (!profile) {
+        return json({ error: "Profile not found" }, 404);
+    }
 
     return json({
-        email: dbUser.email,
-        //We are working with all the db schemas atm, waiting for those:
-        //name: dbUser.name ?? "",
-        //status: dbUser.status ?? "",
+        email: user.email ?? "",
+        displayName: profile.displayName ?? "",
+        status: profile.status ?? "",
+        avatarUrl: profile.avatarUrl ?? "",
+        notificationsEnabled: profile.notificationsEnabled ?? true,
     });
 }

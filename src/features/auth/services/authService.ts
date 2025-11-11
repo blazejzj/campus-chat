@@ -3,6 +3,7 @@ import authRepository from "../repository/authRepository";
 import { hashPassword } from "../utils/hash";
 import { LoginResult } from "../types/types";
 import { createJwt } from "../utils/jwt";
+import profileRepository from "@/features/profile/repository/profileRepository";
 
 export const authService = {
     async registerUser({
@@ -23,6 +24,9 @@ export const authService = {
             hashedPassword,
             displayName
         );
+        console.log("in authService.REgisterUser");
+        console.log("Created user with ID:", id);
+        await profileRepository.createProfile(id, displayName);
 
         return { ok: true as const, id };
     },

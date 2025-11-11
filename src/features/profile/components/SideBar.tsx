@@ -2,7 +2,9 @@ export default function SideBar() {
     return (
         <aside className="w-64 border-r p-4">
             <div className="mb-8">
-                <h1 className="text-2xl font-bold">CampusChat</h1>
+                <h1 className="text-2xl font-bold theme-text-color">
+                    CampusChat
+                </h1>
             </div>
 
             <nav>
