@@ -2,6 +2,7 @@
 
 import { createContext, useState } from "react";
 import { User as CoreUser } from "../../../types/User";
+import { useFetch } from "../hooks/useFetch";
 
 type AuthUser = CoreUser | null;
 
@@ -22,6 +23,8 @@ export function AuthProvider({
 }) {
     const [user, setUser] = useState<AuthUser>(initialUser);
 
+    const { request } = useFetch();
+
     const login = (nextUser: CoreUser) => {
         // cookie is already set by /api/login, so here we just hydrate
         setUser(nextUser);
@@ -31,7 +34,7 @@ export function AuthProvider({
     // or if should be done 2 different places but here we are
     const logout = async () => {
         try {
-            await fetch("/api/v1/auth/logout", {
+            await request("/api/v1/auth/logout", {
                 method: "POST",
                 credentials: "include",
             });

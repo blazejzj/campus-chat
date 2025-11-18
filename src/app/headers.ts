@@ -24,8 +24,27 @@ export const setCommonHeaders =
         );
 
         // Defines trusted sources for content loading and script execution:
-        response.headers.set(
-            "Content-Security-Policy",
-            `default-src 'self'; script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'self'; frame-src 'self' https://challenges.cloudflare.com https://rwsdk.com; object-src 'none';`
-        );
+        // strict headers causet preamble error - only seeing white screen in dev server
+        // altered headers for dev server to allow vite hmr and dev server scripts
+        // one mode for dev, one for production (Strict)
+        if (import.meta.env.VITE_IS_DEV_SERVER) {
+            response.headers.set(
+                "Content-Security-Policy",
+                "default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173; " +
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173; " +
+                    "style-src 'self' 'unsafe-inline' http://localhost:5173; " +
+                    "frame-src 'self' http://localhost:5173; " +
+                    "object-src 'none';"
+            );
+        } else {
+            response.headers.set(
+                "Content-Security-Policy",
+                "default-src 'self'; " +
+                    `script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com; ` +
+                    "style-src 'self' 'unsafe-inline'; " +
+                    "frame-ancestors 'self'; " +
+                    "frame-src 'self' https://challenges.cloudflare.com https://rwsdk.com; " +
+                    "object-src 'none';"
+            );
+        }
     };

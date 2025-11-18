@@ -1,6 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import type { Result } from "@/app/types/result";
+
+type AnyResult = Result<unknown>;
+
+// TODO: move to utils?
+function isResultShape(data: any): data is AnyResult {
+    return data && typeof data === "object" && "ok" in data;
+}
 
 export function useFetch() {
     const [loading, setLoading] = useState(false);
@@ -18,9 +26,30 @@ export function useFetch() {
             const data = await res.json().catch(() => ({}));
 
             if (!res.ok) {
-                const message =
-                    (data as { error?: string }).error || "Request failed";
+                let message = "Request failed"; // default message just incase
+
+                if (isResultShape(data) && data.ok === false) {
+                    message = data.message || data.reason || message;
+                } else if (
+                    data &&
+                    typeof data === "object" &&
+                    "error" in data &&
+                    typeof (data as any).error === "string"
+                ) {
+                    message = (data as any).error;
+                }
+
                 throw new Error(message);
+            }
+
+            if (isResultShape(data)) {
+                if (data.ok) {
+                    return data.data as T;
+                } else {
+                    const message =
+                        data.message || data.reason || "Request failed";
+                    throw new Error(message);
+                }
             }
 
             return data as T;
