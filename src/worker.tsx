@@ -11,6 +11,7 @@ import NotFoundPage from "./app/pages/NotFoundPage";
 import { User } from "../types/User";
 import { setCommonHeaders } from "./app/headers";
 import { apiV1Routes } from "./server/api/v1";
+import ProfilePage from "./app/pages/ProfilePage";
 
 // magic context, extending global context
 export type AppContext = {
@@ -28,6 +29,7 @@ export default defineApp([
             route("/login", () => <LoginPage />),
             route("/register", () => <RegisterPage />),
             route("/dashboard", () => <DashboardPage />),
+            route("/profile", () => <ProfilePage />),
             route("/*", () => <NotFoundPage />),
         ]),
     ]),

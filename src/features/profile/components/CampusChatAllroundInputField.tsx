@@ -4,6 +4,7 @@ type InputProps = {
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     name?: string;
     type?: string;
+    disabled?: boolean;
     placeholder?: string;
 };
 
@@ -23,6 +24,7 @@ export default function CampusChatAllroundInputField({
                 type={props.type || "text"}
                 placeholder={props.placeholder}
                 value={props.value}
+                disabled={props.disabled || false}
                 onChange={props.onChange}
             />
         </>

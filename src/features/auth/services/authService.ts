@@ -32,6 +32,9 @@ export const createAuthService = (repo: typeof authRepository) => ({
             hashedPassword,
             displayName
         );
+        console.log("in authService.REgisterUser");
+        console.log("Created user with ID:", id);
+        await profileRepository.createProfile(id, displayName);
 
         if (!createResult.ok) {
             return { ok: false, reason: createResult.reason };

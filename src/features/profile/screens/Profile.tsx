@@ -1,14 +1,137 @@
 "use client";
 import { useAuth } from "@/app/hooks/useAuth";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import CampusChatAllroundButton from "@/features/profile/components/CampusChatAllroundButton";
 import CampusChatAllroundInputField from "../components/CampusChatAllroundInputField";
 import SideBar from "../components/SideBar";
+import { useFetch } from "@/app/hooks/useFetch";
+import { useEffect } from "react";
+import { toast } from "react-toastify";
 
 export default function Profile() {
+    const { user } = useAuth();
+    const { request, loading, error } = useFetch();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    console.log(user);
+    if (!user) {
+        return <div>Please log in to access your profile.</div>; // for new solition when calling profileRepo.createprofile - this should never be needed.. everyone on register has a profile created auto.
+    }
+
     const [name, setName] = useState("Leo");
     const [status, setStatus] = useState("online");
     const [email, setEmail] = useState("LeoD@hiof.no");
+    const [avatarUrl, setAvatarUrl] = useState("");
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+    useEffect(() => {
+        async function loadProfile() {
+            try {
+                const data = await request<{
+                    email: string;
+                    displayName?: string;
+                    status?: string;
+                    avatarUrl?: string;
+                    notificationsEnabled?: boolean;
+                }>("/api/v1/profile", {
+                    credentials: "include",
+                });
+
+                console.log("Profile data loaded:", data);
+                setEmail(data.email || "");
+                setName(data.displayName || "");
+                setStatus(data.status || "");
+                setAvatarUrl(data.avatarUrl || "");
+                setNotificationsEnabled(data.notificationsEnabled ?? true);
+            } catch (error) {
+                console.error("Failed to load profile:", error);
+            }
+        }
+
+        loadProfile();
+    }, [user]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const updated = await request<{
+                email: string;
+                displayName?: string;
+                status?: string;
+                avatarUrl?: string;
+                notificationsEnabled?: boolean;
+            }>("/api/v1/profile", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    displayName: name,
+                    status: status,
+                    notificationsEnabled,
+                    //email: email, (email update not supported yet - perhaps later..we are not sure here ??
+                }),
+                credentials: "include",
+            });
+
+            if (updated.displayName !== undefined) setName(updated.displayName);
+            if (updated.status !== undefined) setStatus(updated.status);
+            if (updated.email !== undefined) setEmail(updated.email);
+            if (updated.notificationsEnabled !== undefined)
+                setNotificationsEnabled(updated.notificationsEnabled);
+        } catch (error) {
+            console.error("Failed to update profile:", error);
+            toast.error("Failed to update profile!");
+        }
+    };
+
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+        const ALLOWED_TYPES = ["image/jpeg", "image/png"];
+
+        const isValidType = ALLOWED_TYPES.includes(file.type);
+        const isValidSize = file.size <= MAX_FILE_SIZE;
+
+        if (!isValidType) {
+            toast.error(
+                "Invalid file type. Please select a JPEG or a PNG image."
+            );
+            return;
+        }
+
+        if (!isValidSize) {
+            toast.error(
+                "File size larger than the 5MB limit. Please select a smaller image/avatar?."
+            );
+            return;
+        }
+        setUploadingAvatar(true);
+        try {
+            const formData = new FormData();
+            formData.append("avatar", file);
+
+            const response = await request<{ avatarUrl: string }>(
+                "/api/v1/profile/avatar",
+                {
+                    method: "POST",
+                    body: formData,
+                    credentials: "include",
+                }
+            );
+
+            setAvatarUrl(response.avatarUrl);
+        } catch (error) {
+            console.error("Failed to upload avatar:", error);
+        } finally {
+            setUploadingAvatar(false);
+        }
+    };
 
     return (
         //Sidebar componetn goes here: unsure of exact placement (within/witout main)
@@ -17,7 +140,7 @@ export default function Profile() {
             <main className="flex-1 p-6">
                 {/* Header section here */}
                 <section className=" border-b">
-                    <h1 className="mb-4 text-4xl font-bold">
+                    <h1 className="mb-4 text-4xl font-bold theme-text-color">
                         Profile Settings
                     </h1>
                     {/* Need separation line here, vert and horizontaøl. */}
@@ -25,18 +148,35 @@ export default function Profile() {
 
                 {/* ProfilePic section here */}
                 <section className="mb-6 mt-6 flex items-center gap-4">
-                    <div className="h-20 w-20 rounded-full bg-gray-300" />
-                    <button
-                        type="button"
-                        className="rounded border border-gray-300 px-3 py-1 text-sm font-medium"
+                    <div className="h-20 w-20 rounded-full bg-gray-300 overflow-hidden" />
+                    {avatarUrl ? (
+                        <img
+                            src={avatarUrl}
+                            alt="Profile Pic/avatar"
+                            className="h-full w-full object-cover"
+                        />
+                    ) : (
+                        <div className="h-full w-full bg-gray-300" />
+                    )}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png"
+                        className="hidden"
+                        onChange={handleFileChange}
+                    />
+                    <CampusChatAllroundButton
+                        size="small"
+                        onClick={handleAvatarClick}
+                        disabled={uploadingAvatar}
                     >
-                        Change
-                    </button>
+                        {uploadingAvatar ? "Uploading..." : "Change picture"}
+                    </CampusChatAllroundButton>
                 </section>
 
                 {/* Form section cjhange name status etc. here.  */}
                 <section>
-                    <form className="space-y-4">
+                    <form className="space-y-4" onSubmit={handleSubmit}>
                         <CampusChatAllroundInputField
                             props={{
                                 label: "Name",
@@ -54,11 +194,48 @@ export default function Profile() {
                         <CampusChatAllroundInputField
                             props={{
                                 label: "Email",
+                                disabled: true,
                                 value: email,
                                 onChange: (e) => setEmail(e.target.value),
                             }}
                         />
-                        <CampusChatAllroundButton />
+
+                        {/* Notification toggle heree, field for this added in profileSchema, migrations ok, hopefulluy no errors on this one on merge.. */}
+                        <div className="flex items-center gap-3">
+                            <label className="font-medium">Notifications</label>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setNotificationsEnabled(
+                                        !notificationsEnabled
+                                    )
+                                }
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                    notificationsEnabled
+                                        ? "bg-green-500"
+                                        : "bg-gray-300"
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        notificationsEnabled
+                                            ? "translate-x-6"
+                                            : "translate-x-1"
+                                    }`}
+                                />
+                            </button>
+                            <span className="text-sm text-gray-600">
+                                {notificationsEnabled ? "Enabled" : "Disabled"}
+                            </span>
+                        </div>
+
+                        <CampusChatAllroundButton
+                            type="submit"
+                            disabled={loading}
+                            size="large"
+                        >
+                            {loading ? "Saving..." : "Save"}
+                        </CampusChatAllroundButton>
                     </form>
                 </section>
             </main>
