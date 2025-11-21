@@ -1,20 +1,39 @@
 import db from "@/server/db";
 import { users, profiles } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
+import { Errors } from "../../../app/types/errors";
+import { AsyncResult } from "@/app/types/result";
 
-export const authRepository = {
-    async findUserByEmail(email: string) {
-        const rows = await db
-            .select()
-            .from(users)
-            .where(eq(users.email, email));
-        return rows[0] ?? null;
+type UserRow = typeof users.$inferSelect;
+
+export const createAuthRepository = (dbInstance: typeof db) => ({
+    async findUserByEmail(email: string): AsyncResult<UserRow | null> {
+        try {
+            const rows = await dbInstance
+                .select()
+                .from(users)
+                .where(eq(users.email, email));
+
+            return {
+                ok: true,
+                data: rows[0] ?? null,
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                reason: Errors.DATABASE_ERROR,
+            };
+        }
     },
 
-    async createUser(email: string, passwordHash: string, displayName: string) {
+    async createUser(
+        email: string,
+        passwordHash: string,
+        displayName: string
+    ): AsyncResult<number> {
         try {
             const now = new Date();
-            const res = await db
+            const res = await dbInstance
                 .insert(users)
                 .values({
                     email,
@@ -25,17 +44,25 @@ export const authRepository = {
 
             const userId = res[0].id;
 
-            await db.insert(profiles).values({
+            await dbInstance.insert(profiles).values({
                 userId,
                 displayName,
                 updatedAt: now,
             });
 
-            return userId;
-        } catch (error: any) {
-            throw new Error("DATABASE_ERROR");
+            return {
+                ok: true,
+                data: userId,
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                reason: Errors.DATABASE_ERROR,
+            };
         }
     },
-};
+});
+
+export const authRepository = createAuthRepository(db);
 
 export default authRepository;

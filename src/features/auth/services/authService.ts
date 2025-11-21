@@ -1,11 +1,11 @@
 import bcrypt from "bcryptjs";
 import authRepository from "../repository/authRepository";
 import { hashPassword } from "../utils/hash";
-import { LoginResult } from "../types/types";
 import { createJwt } from "../utils/jwt";
-import profileRepository from "@/features/profile/repository/profileRepository";
+import { Errors } from "../../../app/types/errors";
+import { AsyncResult } from "@/app/types/result";
 
-export const authService = {
+export const createAuthService = (repo: typeof authRepository) => ({
     async registerUser({
         email,
         password,
@@ -14,12 +14,20 @@ export const authService = {
         email: string;
         password: string;
         displayName: string;
-    }) {
-        const userExists = await authRepository.findUserByEmail(email);
-        if (userExists) return { ok: false, reason: "EMAIL_IN_USE" as const };
+    }): AsyncResult<{ id: number }> {
+        const userResult = await repo.findUserByEmail(email);
+
+        if (!userResult.ok) {
+            return { ok: false, reason: userResult.reason };
+        }
+
+        if (userResult.data) {
+            return { ok: false, reason: Errors.EMAIL_IN_USE };
+        }
 
         const hashedPassword = await hashPassword(password);
-        const id = await authRepository.createUser(
+
+        const createResult = await repo.createUser(
             email,
             hashedPassword,
             displayName
@@ -28,7 +36,11 @@ export const authService = {
         console.log("Created user with ID:", id);
         await profileRepository.createProfile(id, displayName);
 
-        return { ok: true as const, id };
+        if (!createResult.ok) {
+            return { ok: false, reason: createResult.reason };
+        }
+
+        return { ok: true, data: { id: createResult.data } };
     },
 
     async loginUser({
@@ -37,17 +49,36 @@ export const authService = {
     }: {
         email: string;
         password: string;
-    }): Promise<LoginResult> {
-        const user = await authRepository.findUserByEmail(email);
-        if (!user) return { ok: false, reason: "WRONG_CREDENTIALS" };
+    }): AsyncResult<{ token: string; user: { id: number; email: string } }> {
+        const userResult = await repo.findUserByEmail(email);
+
+        if (!userResult.ok) {
+            return { ok: false, reason: userResult.reason };
+        }
+
+        const user = userResult.data;
+
+        if (!user) {
+            return { ok: false, reason: Errors.WRONG_CREDENTIALS };
+        }
 
         const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-        if (!passwordMatch) return { ok: false, reason: "WRONG_CREDENTIALS" };
+        if (!passwordMatch) {
+            return { ok: false, reason: Errors.WRONG_CREDENTIALS };
+        }
 
         const token = await createJwt({ id: user.id, email: user.email });
 
-        return { ok: true, token, user: { id: user.id, email: user.email } };
+        return {
+            ok: true,
+            data: {
+                token,
+                user: { id: user.id, email: user.email },
+            },
+        };
     },
-};
+});
+
+export const authService = createAuthService(authRepository);
 
 export default authService;

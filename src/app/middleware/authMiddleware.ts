@@ -1,13 +1,18 @@
 import { parse as parseCookie } from "cookie";
 import { verifyJwt } from "@/features/auth/utils/jwt";
-import { json } from "../utils/responseJson";
 import { redirect } from "../utils/redirect";
 import { RequestInfo } from "rwsdk/worker";
+import { links } from "../links";
+import { errorResponse } from "../utils/errorHandler";
+import { Errors } from "../types/errors";
 
 // This is a middleware to protect routes that require authentication
 // it checks for a valid JWT in the cookies and redirects to login if not present
 // if already logged in, it redirects away from login/register pages to dashboard
-export async function authMiddleware({ request, ctx }: RequestInfo) {
+export async function authMiddleware({
+    request,
+    ctx,
+}: RequestInfo): Promise<Response | void> {
     const url = new URL(request.url);
     const { pathname, search } = url;
 
@@ -16,12 +21,14 @@ export async function authMiddleware({ request, ctx }: RequestInfo) {
 
     // public UI routes
     const isUiPublic =
-        pathname === "/" || pathname === "/login" || pathname === "/register";
+        pathname === links.pages.root ||
+        pathname === links.pages.login ||
+        pathname === links.pages.register;
 
     // public api routes
     const isApiPublic =
-        pathname === "/api/v1/auth/login" ||
-        pathname === "/api/v1/auth/register";
+        pathname === links.api.auth.login ||
+        pathname === links.api.auth.register;
 
     if (isApi && isApiPublic) return;
 
@@ -34,7 +41,7 @@ export async function authMiddleware({ request, ctx }: RequestInfo) {
     // else if not valid, redirect to login
     if (!payload) {
         if (isApi) {
-            return json({ error: "Unauthorized" }, 401);
+            return errorResponse(Errors.UNAUTHORIZED, "Unauthorized", 401);
         }
 
         if (isUiPublic) {
@@ -42,12 +49,12 @@ export async function authMiddleware({ request, ctx }: RequestInfo) {
         }
 
         const next = encodeURIComponent(pathname + search);
-        return redirect(`/login?next=${next}`);
+        return redirect(`${links.pages.login}?next=${next}`);
     }
 
     // allow public routes
     if (!isApi && isUiPublic) {
-        return redirect("/dashboard");
+        return redirect(links.pages.dashboard);
     }
     // this will have to change slighlty if we add more fields to the payload
     ctx.user = {
