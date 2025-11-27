@@ -3,9 +3,9 @@ import {
     MessageRow,
     NewRoomRow,
     RoomRow,
-} from "./../controllers/globalChatRepository";
+} from "../repository/globalChatRepository";
 import { AsyncResult } from "@/app/types/result";
-import globalChatRepository from "../controllers/globalChatRepository";
+import globalChatRepository from "../repository/globalChatRepository";
 import { Errors } from "@/app/types/errors";
 /* 
 Here we want potentially make sure that the slug = "global exists",
