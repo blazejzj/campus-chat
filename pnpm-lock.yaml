@@ -39,8 +39,8 @@ importers:
         specifier: ^19.2.0
         version: 19.2.0(react@19.2.0)
       rwsdk:
-        specifier: 1.0.0-beta.29
-        version: 1.0.0-beta.29(@cloudflare/vite-plugin@1.13.10(vite@7.2.2(@types/node@22.19.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6))(workerd@1.20251008.0)(wrangler@4.42.2(@cloudflare/workers-types@4.20251109.0)))(react-dom@19.2.0(react@19.2.0))(react-server-dom-webpack@19.2.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(webpack@5.102.1(esbuild@0.25.12)))(react@19.2.0)(typescript@5.9.3)(vite@7.2.2(@types/node@22.19.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6))(wrangler@4.42.2(@cloudflare/workers-types@4.20251109.0))
+        specifier: 1.0.0-beta.33
+        version: 1.0.0-beta.33(@cloudflare/vite-plugin@1.13.10(vite@7.2.2(@types/node@22.19.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6))(workerd@1.20251008.0)(wrangler@4.42.2(@cloudflare/workers-types@4.20251109.0)))(capnweb@0.2.0)(react-dom@19.2.0(react@19.2.0))(react-server-dom-webpack@19.2.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(webpack@5.102.1(esbuild@0.25.12)))(react@19.2.0)(typescript@5.9.3)(vite@7.2.2(@types/node@22.19.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6))(wrangler@4.42.2(@cloudflare/workers-types@4.20251109.0))
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -2756,11 +2756,12 @@ packages:
   rsc-html-stream@0.0.7:
     resolution: {integrity: sha512-v9+fuY7usTgvXdNl8JmfXCvSsQbq2YMd60kOeeMIqCJFZ69fViuIxztHei7v5mlMMa2h3SqS+v44Gu9i9xANZA==}
 
-  rwsdk@1.0.0-beta.29:
-    resolution: {integrity: sha512-T0Dbqf+DriFpbi11ZCfdUK8mcLUGV5TwtVvKByh4+dJ6OKOTqIb9V3+Ox7gDaQJjE68fzWBBxovomx5o2H6IIw==}
+  rwsdk@1.0.0-beta.33:
+    resolution: {integrity: sha512-k/8CxfgQeXjAh6opNuVFqtkfeMcUhXRqqLpYr1bQ1h5e4K5pbU3+/3CoIKhb2XSJRhJm3xxksLxCa51MraHV6w==}
     hasBin: true
     peerDependencies:
       '@cloudflare/vite-plugin': ^1.13.10
+      capnweb: ~0.2.0
       react: '>=19.2.0-0 <19.3.0 || >=19.3.0-0 <20.0.0'
       react-dom: '>=19.2.0-0 <19.3.0 || >=19.3.0-0 <20.0.0'
       react-server-dom-webpack: '>=19.2.0-0 <19.3.0 || >=19.3.0-0 <20.0.0'
@@ -5995,7 +5996,7 @@ snapshots:
 
   rsc-html-stream@0.0.7: {}
 
-  rwsdk@1.0.0-beta.29(@cloudflare/vite-plugin@1.13.10(vite@7.2.2(@types/node@22.19.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6))(workerd@1.20251008.0)(wrangler@4.42.2(@cloudflare/workers-types@4.20251109.0)))(react-dom@19.2.0(react@19.2.0))(react-server-dom-webpack@19.2.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(webpack@5.102.1(esbuild@0.25.12)))(react@19.2.0)(typescript@5.9.3)(vite@7.2.2(@types/node@22.19.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6))(wrangler@4.42.2(@cloudflare/workers-types@4.20251109.0)):
+  rwsdk@1.0.0-beta.33(@cloudflare/vite-plugin@1.13.10(vite@7.2.2(@types/node@22.19.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6))(workerd@1.20251008.0)(wrangler@4.42.2(@cloudflare/workers-types@4.20251109.0)))(capnweb@0.2.0)(react-dom@19.2.0(react@19.2.0))(react-server-dom-webpack@19.2.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(webpack@5.102.1(esbuild@0.25.12)))(react@19.2.0)(typescript@5.9.3)(vite@7.2.2(@types/node@22.19.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6))(wrangler@4.42.2(@cloudflare/workers-types@4.20251109.0)):
     dependencies:
       '@ast-grep/napi': 0.39.9
       '@cloudflare/vite-plugin': 1.13.10(vite@7.2.2(@types/node@22.19.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6))(workerd@1.20251008.0)(wrangler@4.42.2(@cloudflare/workers-types@4.20251109.0))
