@@ -12,13 +12,9 @@ export const links = {
             logout: appLink("/api/v1/auth/logout"),
         },
         // exampel how to extend
-        // chat: {
-        //     list all rooms
-        //     list: appLink("/api/v1/chat"),
-        //     specific rooms with ids
-        //     room: (roomId: string) =>
-        //         appLink("/api/v1/chat/:roomId", { roomId }),
-        // },
+        chat: {
+            global: appLink("/api/v1/chat/global"),
+        },
     },
     pages: {
         root: appLink("/"),
