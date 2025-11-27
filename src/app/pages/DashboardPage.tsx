@@ -1,4 +1,5 @@
 "use client";
+import GlobalChatScreen from "@/features/globalChat/screens/GlobalChatScreen";
 import { useAuth } from "../hooks/useAuth";
 
 export default function DashboardPage() {
@@ -13,6 +14,9 @@ export default function DashboardPage() {
             <h1>you are on dashboard page!</h1>
             <p>logged in as {user.email}</p>
             <button onClick={logout}>Logout here man</button>
+            <div className="flex-1">
+                <GlobalChatScreen />
+            </div>
         </div>
     );
 }
