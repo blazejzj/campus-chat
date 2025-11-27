@@ -3,7 +3,6 @@ import { AsyncResult } from "@/app/types/result";
 import db from "@/server/db";
 import { rooms } from "@/server/db/roomSchema";
 import { messages } from "@/server/db/schema";
-import { create } from "domain";
 import { desc, eq } from "drizzle-orm";
 
 export type RoomRow = typeof rooms.$inferSelect;
