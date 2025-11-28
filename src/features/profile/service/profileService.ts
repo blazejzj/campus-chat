@@ -1,8 +1,6 @@
 import { AsyncResult } from "@/app/types/result";
 import { Errors } from "@/app/types/errors";
-import profileRepository, {
-    ProfileUpdates,
-} from "../repository/profileRepository";
+import profileRepository from "../repository/profileRepository";
 import authRepository from "@/features/auth/repository/authRepository";
 import { ProfileUpdateInput } from "../dto";
 
@@ -20,7 +18,6 @@ export type ProfileData = {
 };
 
 export const createProfileService = (repo: typeof profileRepository) => {
-    // TODO: helper function, consider omving later!
     async function mapProfile(user: UserForProfile): AsyncResult<ProfileData> {
         const profileResult = await repo.findProfileByUserId(user.id);
 
@@ -34,7 +31,6 @@ export const createProfileService = (repo: typeof profileRepository) => {
 
         const profile = profileResult.data;
 
-        // we expect already auth to create a profile under register
         if (!profile) {
             return {
                 ok: false,
@@ -67,7 +63,8 @@ export const createProfileService = (repo: typeof profileRepository) => {
             updates: ProfileUpdateInput
         ): AsyncResult<ProfileData> {
             const { email, ...profileUpdates } = updates;
-            // first email update f there is any
+            let nextUser = user;
+
             if (email && email !== user.email) {
                 const emailResult = await authRepository.updateUserEmail(
                     user.id,
@@ -85,13 +82,12 @@ export const createProfileService = (repo: typeof profileRepository) => {
                     };
                 }
 
-                // make sure map gets updated mail
-                user = { ...user, email };
+                nextUser = { ...user, email };
             }
 
             const updateResult = await repo.updateProfileByUserId(
-                user.id,
-                updates
+                nextUser.id,
+                profileUpdates
             );
 
             if (!updateResult.ok) {
@@ -102,7 +98,7 @@ export const createProfileService = (repo: typeof profileRepository) => {
                 };
             }
 
-            return mapProfile(user);
+            return mapProfile(nextUser);
         },
 
         async updateAvatarForUser(

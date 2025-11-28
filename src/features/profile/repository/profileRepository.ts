@@ -22,6 +22,8 @@ export const createProfileRepository = (dbInstance: typeof db) => ({
                 .where(eq(profiles.userId, userId))
                 .limit(1);
 
+            console.log("Loaded profile from DB:", profile);
+
             return {
                 ok: true,
                 data: profile ?? null,
@@ -39,6 +41,14 @@ export const createProfileRepository = (dbInstance: typeof db) => ({
         updates: ProfileUpdates
     ): AsyncResult<void> {
         try {
+            console.log("in profileRepository.updateProfileByUserId");
+            console.log(
+                "Updating profile for userId:",
+                userId,
+                "with updates:",
+                updates
+            );
+
             await dbInstance
                 .update(profiles)
                 .set({

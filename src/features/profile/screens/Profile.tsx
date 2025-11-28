@@ -53,8 +53,10 @@ export default function Profile() {
             }
         }
 
-        loadProfile();
-    }, [user, request]);
+        if (user?.id) {
+            loadProfile();
+        }
+    }, [user?.id]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -67,8 +69,7 @@ export default function Profile() {
                     body: JSON.stringify({
                         displayName: name,
                         status,
-                        notificationsEnabled,
-                        email: email,
+                        email,
                     }),
                     credentials: "include",
                 }
