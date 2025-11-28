@@ -6,6 +6,7 @@ import { useFetch } from "@/app/hooks/useFetch";
 import AuthCard from "../components/AuthCard";
 import FormField from "../components/FormField";
 import PrimaryButton from "../components/PrimaryButton";
+import { links } from "@/app/links";
 
 type LoginResponse = {
     // token: string;
@@ -26,9 +27,8 @@ export default function Login() {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError("");
-
         try {
-            const data = await request<LoginResponse>("/api/v1/auth/login", {
+            const data = await request<LoginResponse>(links.api.auth.login, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -36,7 +36,7 @@ export default function Login() {
             });
 
             login(data.user);
-            location.replace("/dashboard");
+            location.replace(links.pages.dashboard);
         } catch {
             // keep it simple here i think, the error is already set by the hook
         }
@@ -49,7 +49,7 @@ export default function Login() {
                 <span>
                     No account?{" "}
                     <a
-                        href="/register"
+                        href={links.pages.register}
                         className="font-semibold hover:underline"
                     >
                         Register here

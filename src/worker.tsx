@@ -11,7 +11,10 @@ import NotFoundPage from "./app/pages/NotFoundPage";
 import { User } from "../types/User";
 import { setCommonHeaders } from "./app/headers";
 import { apiV1Routes } from "./server/api/v1";
+import { realtimeRoute } from "rwsdk/realtime/worker";
+import { env } from "cloudflare:workers";
 
+export { RealtimeDurableObject } from "rwsdk/realtime/durableObject";
 // magic context, extending global context
 export type AppContext = {
     user: User | null;
@@ -20,6 +23,9 @@ export type AppContext = {
 export default defineApp([
     setCommonHeaders(),
     authMiddleware,
+
+    realtimeRoute(() => env.REALTIME_DURABLE_OBJECT),
+
     prefix("/api", [prefix("/v1", [...apiV1Routes])]),
 
     render(Document, [
