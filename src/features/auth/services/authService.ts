@@ -37,7 +37,9 @@ export const createAuthService = (repo: typeof authRepository) => ({
             return { ok: false, reason: createResult.reason };
         }
 
-        return { ok: true, data: { id: createResult.data } };
+        const id = createResult.data;
+
+        return { ok: true, data: { id } };
     },
 
     async loginUser({

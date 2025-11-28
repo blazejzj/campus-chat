@@ -21,6 +21,9 @@ export const profiles = sqliteTable("profiles", {
     displayName: text("display_name"),
     avatarUrl: text("avatar_url"),
     status: text("status"),
+    notificationsEnabled: integer("notifications_enabled", {
+        mode: "boolean",
+    }).default(true),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }),
 });
 

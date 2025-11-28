@@ -1,7 +1,11 @@
 {
   "version": "6",
   "dialect": "sqlite",
+<<<<<<< HEAD
   "id": "3c176720-7e9e-4889-a86d-27ae6299a1fd",
+=======
+  "id": "0904a987-1fce-418d-aef8-fe78ccb053e0",
+>>>>>>> f24568d9dd7b6f8f4fbde8e8a5e16fdfeedbe6e6
   "prevId": "0b708230-e0bc-42f7-b990-d2dd48438290",
   "tables": {
     "profiles": {
@@ -225,6 +229,7 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+<<<<<<< HEAD
         },
         "slug": {
           "name": "slug",
@@ -243,6 +248,11 @@
           "isUnique": true
         }
       },
+=======
+        }
+      },
+      "indexes": {},
+>>>>>>> f24568d9dd7b6f8f4fbde8e8a5e16fdfeedbe6e6
       "foreignKeys": {
         "rooms_created_by_users_id_fk": {
           "name": "rooms_created_by_users_id_fk",
@@ -745,6 +755,61 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
+<<<<<<< HEAD
+=======
+    },
+    "profile": {
+      "name": "profile",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "avatar_url": {
+          "name": "avatar_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+>>>>>>> f24568d9dd7b6f8f4fbde8e8a5e16fdfeedbe6e6
     }
   },
   "views": {},

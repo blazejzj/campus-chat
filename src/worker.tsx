@@ -13,6 +13,7 @@ import { setCommonHeaders } from "./app/headers";
 import { apiV1Routes } from "./server/api/v1";
 import { realtimeRoute } from "rwsdk/realtime/worker";
 import { env } from "cloudflare:workers";
+import ProfilePage from "./app/pages/ProfilePage";
 
 export { RealtimeDurableObject } from "rwsdk/realtime/durableObject";
 // magic context, extending global context
@@ -34,6 +35,7 @@ export default defineApp([
             route("/login", () => <LoginPage />),
             route("/register", () => <RegisterPage />),
             route("/dashboard", () => <DashboardPage />),
+            // route("/profile", () => <ProfilePage />),
             route("/*", () => <NotFoundPage />),
         ]),
     ]),
