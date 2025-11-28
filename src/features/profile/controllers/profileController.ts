@@ -1,52 +1,65 @@
-// import { json } from "@/app/utils/responseJson";
-// import { RequestInfo } from "rwsdk/worker";
-// import profileRepository from "@/features/profile/repository/profileRepository";
+import { Errors } from "@/app/types/errors";
+import { AsyncResult } from "@/app/types/result";
+import db from "@/server/db";
+import { profiles } from "@/server/db/userSchema";
+import { eq } from "drizzle-orm";
 
-// export async function ProfileController({
-//     request,
-//     ctx,
-// }: RequestInfo): Promise<Response> {
-//     const user = ctx.user as { id: number; email: string } | undefined;
+type ProfileRow = typeof profiles.$inferSelect;
 
-//     if (!user?.id) {
-//         return json({ error: "Unauthorized" }, 401);
-//     }
+export type ProfileUpdates = {
+    displayName?: string;
+    status?: string;
+    avatarUrl?: string;
+    notificationsEnabled: boolean;
+};
 
-//     if (request.method === "PATCH") {
-//         try {
-//             const body = (await request.json()) as {
-//                 displayName?: string;
-//                 status?: string;
-//                 avatarUrl?: string;
-//             };
+export const createProfileRepository = (dbInstance: typeof db) => ({
+    async findProfileByUserId(userId: number): AsyncResult<ProfileRow | null> {
+        try {
+            const [profile] = await dbInstance
+                .select()
+                .from(profiles)
+                .where(eq(profiles.userId, userId))
+                .limit(1);
 
-//             await profileRepository.updateProfileByUserId(user.id, body);
+            return {
+                ok: true,
+                data: profile ?? null,
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                reason: Errors.DATABASE_ERROR,
+            };
+        }
+    },
 
-//             const updated = await profileRepository.findProfileByUserId(
-//                 user.id
-//             );
-//             return json({
-//                 email: user.email ?? "",
-//                 displayName: updated?.displayName ?? "",
-//                 status: updated?.status ?? "",
-//                 avatarUrl: updated?.avatarUrl ?? "",
-//                 notificationsEnabled: updated?.notificationsEnabled ?? true,
-//             });
-//         } catch {
-//             return json({ error: "Failed to update profile" }, 400);
-//         }
-//     }
+    async updateProfileByUserId(
+        userId: number,
+        updates: ProfileUpdates
+    ): AsyncResult<void> {
+        try {
+            await dbInstance
+                .update(profiles)
+                .set({
+                    ...updates,
+                    updatedAt: new Date(),
+                })
+                .where(eq(profiles.userId, userId));
 
-//     const profile = await profileRepository.findProfileByUserId(user.id);
-//     if (!profile) {
-//         return json({ error: "Profile not found" }, 404);
-//     }
+            return {
+                ok: true,
+                data: undefined, // we probably wont return anything here under updates
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                reason: Errors.DATABASE_ERROR,
+            };
+        }
+    },
+});
 
-//     return json({
-//         email: user.email ?? "",
-//         displayName: profile.displayName ?? "",
-//         status: profile.status ?? "",
-//         avatarUrl: profile.avatarUrl ?? "",
-//         notificationsEnabled: profile.notificationsEnabled ?? true,
-//     });
-// }
+export const profileRepository = createProfileRepository(db);
+
+export default profileRepository;
