@@ -1,10 +1,17 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import useGlobalChat from "../hooks/useGlobalChat";
+import useGlobalChat, { GlobalChatMessage } from "../hooks/useGlobalChat";
 
-export function GlobalChatScreen() {
-    const { messages, loading, sending, error, sendMessage } = useGlobalChat();
+type GlobalChatScreenProps = {
+    initialMessages?: GlobalChatMessage[];
+};
+
+export function GlobalChatScreen({
+    initialMessages = [],
+}: GlobalChatScreenProps) {
+    const { messages, loading, sending, error, sendMessage } =
+        useGlobalChat(initialMessages);
     const [body, setBody] = useState("");
 
     async function handleSubmit(e: FormEvent) {
@@ -18,7 +25,9 @@ export function GlobalChatScreen() {
         <div className="flex h-full flex-col">
             <header className="border-b p-3">
                 <h2 className="text-lg font-semibold">Global chat</h2>
-                <p className="text-xs text-gray-500">Everone can write here!</p>
+                <p className="text-xs text-gray-500">
+                    Everyone can write here!
+                </p>
             </header>
 
             <main className="flex-1 overflow-y-auto p-3 space-y-2">
@@ -37,7 +46,7 @@ export function GlobalChatScreen() {
                         key={m.id}
                         className="rounded bg-slate-100 p-2 text-sm"
                     >
-                        <div className="text-[11px] text-gray-500 mb-0.5">
+                        <div className="mb-0.5 text-[11px] text-gray-500">
                             User #{m.authorId ?? "unknown"} ·{" "}
                             {m.createdAt
                                 ? new Date(m.createdAt).toLocaleTimeString()
@@ -50,7 +59,7 @@ export function GlobalChatScreen() {
 
             <form
                 onSubmit={handleSubmit}
-                className="border-t p-3 flex gap-2 items-center"
+                className="flex items-center gap-2 border-t p-3"
             >
                 <input
                     className="flex-1 rounded border px-3 py-2 text-sm"

@@ -4,6 +4,9 @@ import { Errors } from "@/app/types/errors";
 import { errorResponse, methodNotAllowed } from "@/app/utils/errorHandler";
 import { jsonResult } from "@/app/utils/responseJson";
 import { SendGlobalMessageDto } from "../dto";
+import { renderRealtimeClients } from "rwsdk/realtime/worker";
+import { env } from "cloudflare:workers";
+import { links } from "@/app/links";
 
 export const createGlobalChatController = (
     service: typeof globalChatService
@@ -84,6 +87,11 @@ export const createGlobalChatController = (
                 Allow: "GET, POST",
             });
         }
+
+        await renderRealtimeClients({
+            durableObjectNamespace: env.REALTIME_DURABLE_OBJECT,
+            key: links.pages.dashboard,
+        });
 
         // everything else than get and post
         return methodNotAllowed(["GET", "POST"]);

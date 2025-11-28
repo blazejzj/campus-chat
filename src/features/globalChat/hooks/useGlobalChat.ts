@@ -1,8 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useFetch } from "@/app/hooks/useFetch";
 import { links } from "@/app/links";
-import { useEffect, useState } from "react";
 
 export type GlobalChatMessage = {
     id: number;
@@ -23,13 +23,21 @@ type SendMessageResponse = {
     data: GlobalChatMessage;
 };
 
-export function useGlobalChat() {
+export function useGlobalChat(initialMessages: GlobalChatMessage[] = []) {
     const { request } = useFetch();
 
-    const [messages, setMessages] = useState<GlobalChatMessage[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [messages, setMessages] =
+        useState<GlobalChatMessage[]>(initialMessages);
+    const [loading, setLoading] = useState(initialMessages.length === 0);
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (initialMessages.length > 0) {
+            setMessages(initialMessages);
+            setLoading(false);
+        }
+    }, [initialMessages]);
 
     async function loadMessages() {
         try {
@@ -43,10 +51,11 @@ export function useGlobalChat() {
                     credentials: "include",
                 }
             );
+
             if (!res.ok) {
-                // Should be an error or maybe something else?
-                throw new Error("Couldnt fetch messages!");
+                throw new Error("Could not fetch messages");
             }
+
             setMessages(res.data);
         } catch (err: any) {
             setError(err?.message ?? "Unknown error has occurred");
@@ -55,8 +64,15 @@ export function useGlobalChat() {
         }
     }
 
+    useEffect(() => {
+        if (initialMessages.length === 0) {
+            loadMessages();
+        }
+    }, []);
+
     async function sendMessage(body: string) {
         const trimmed = body.trim();
+        if (!trimmed) return;
 
         try {
             setSending(true);
@@ -75,9 +91,9 @@ export function useGlobalChat() {
             );
 
             if (!res.ok) {
-                // TODO: possibly change this error to something else
-                throw new Error("Couldnt send message");
+                throw new Error("Could not send message");
             }
+
             const newMessage = res.data;
 
             setMessages((prev) => [...prev, newMessage]);
@@ -87,10 +103,6 @@ export function useGlobalChat() {
             setSending(false);
         }
     }
-
-    useEffect(() => {
-        loadMessages();
-    }, []);
 
     return {
         messages,
