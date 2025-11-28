@@ -1,57 +1,101 @@
-// import { json } from "@/app/utils/responseJson";
-// import { RequestInfo } from "rwsdk/worker";
-// import profileRepository from "@/features/profile/repository/profileRepository";
+import { jsonResult } from "@/app/utils/responseJson";
+import { errorResponse, methodNotAllowed } from "@/app/utils/errorHandler";
+import type { RequestInfo } from "rwsdk/worker";
+import { Errors } from "@/app/types/errors";
+import profileService from "../service/profileService";
+import { User } from "../../../../types/User";
 
-// const maxSize = 5 * 1024 * 1024; // 5MBytes
+const MAX_SIZE = 5 * 1024 * 1024;
+const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 
-// export async function AvatarController({
-//     request,
-//     ctx,
-// }: RequestInfo): Promise<Response> {
-//     const user = ctx.user as { id: number; email: string } | undefined;
+export const createAvatarController = (service: typeof profileService) => {
+    return {
+        async uploadAvatar(ctx: RequestInfo): Promise<Response> {
+            const method = ctx.request.method.toUpperCase();
+            const user = ctx.ctx.user as User | null;
 
-//     if (!user?.id) {
-//         return json({ error: "Unauthorized" }, 401);
-//     }
+            if (!user) {
+                return errorResponse(Errors.UNAUTHORIZED, "Unauthorized", 401);
+            }
 
-//     if (request.method !== "POST") {
-//         return json({ error: "Method not allowed" }, 405);
-//     }
+            if (method !== "POST") {
+                return methodNotAllowed(["POST"]);
+            }
 
-//     try {
-//         const formData = await request.formData();
-//         const file = formData.get("avatar") as File | null;
+            try {
+                const formData = await ctx.request.formData();
+                const file = formData.get("avatar") as File | null;
 
-//         if (!file) {
-//             return json({ error: "No file uploaded" }, 400);
-//         }
+                if (!file) {
+                    return errorResponse(
+                        Errors.VALIDATION_ERROR,
+                        "No file uploaded",
+                        400
+                    );
+                }
 
-//         const allowedTypes = ["image/jpeg", "image/png"];
-//         if (!allowedTypes.includes(file.type)) {
-//             return json({ error: "Invalid file type" }, 400);
-//         }
+                if (!ALLOWED_TYPES.includes(file.type)) {
+                    return errorResponse(
+                        Errors.VALIDATION_ERROR,
+                        "Invalid file type",
+                        400
+                    );
+                }
 
-//         if (file.size > maxSize) {
-//             return json({ error: "File is too large" }, 400);
-//         }
+                if (file.size > MAX_SIZE) {
+                    return errorResponse(
+                        Errors.VALIDATION_ERROR,
+                        "File is too large",
+                        400
+                    );
+                }
 
-//         const timestamp = Date.now();
-//         const extension = file.name.split(".").pop();
-//         const filename = `avatar_${user.id}_${timestamp}.${extension}`;
+                // TODO: Later we can upload to R2 to get real urls, right now
+                // we fake it till we make it
+                const timestamp = Date.now();
+                const extension = file.name.split(".").pop() ?? "png";
+                const avatarUrl = `/avatars/avatar_${user.id}_${timestamp}.${extension}`;
 
-//         const arrayBuffer = await file.arrayBuffer();
-//         const buffer = Buffer.from(arrayBuffer);
+                const result = await service.updateAvatarForUser(
+                    user,
+                    avatarUrl
+                );
 
-//         {
-//             /* TODO: localstorage not working at all locally...cannot uplaod file. fsWriteFile error. Need to ask Blazej for cloudflare R2 storage..Cloudflare not supportin local storage (fs)  */
-//         }
+                if (!result.ok) {
+                    if (result.reason === Errors.DATABASE_ERROR) {
+                        return errorResponse(
+                            Errors.DATABASE_ERROR,
+                            "Database error while updating avatar",
+                            500
+                        );
+                    }
 
-//         const avatarUrl = "";
-//         await profileRepository.updateProfileByUserId(user.id, { avatarUrl });
+                    return errorResponse(
+                        Errors.INTERNAL_SERVER_ERROR,
+                        result.message ?? "Failed to update avatar",
+                        500
+                    );
+                }
 
-//         return json({ avatarUrl });
-//     } catch (error) {
-//         console.error("Error uploading avatar:", error);
-//         return json({ error: "Failed to upload avatar" }, 500);
-//     }
-// }
+                return jsonResult(
+                    {
+                        ok: true as const,
+                        data: { avatarUrl: result.data.avatarUrl },
+                    },
+                    200
+                );
+            } catch (error) {
+                console.error("Error uploading avatar:", error);
+                return errorResponse(
+                    Errors.INTERNAL_SERVER_ERROR,
+                    "Failed to upload avatar",
+                    500
+                );
+            }
+        },
+    };
+};
+
+export const avatarController = createAvatarController(profileService);
+
+export default avatarController;
