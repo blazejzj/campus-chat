@@ -13,15 +13,8 @@ export type GlobalChatMessage = {
     createdAt: string | null;
 };
 
-type GetMessagesResponse = {
-    ok: boolean;
-    data: GlobalChatMessage[];
-};
-
-type SendMessageResponse = {
-    ok: boolean;
-    data: GlobalChatMessage;
-};
+type GetMessagesResponse = GlobalChatMessage[];
+type SendMessageResponse = GlobalChatMessage;
 
 export function useGlobalChat(initialMessages: GlobalChatMessage[] = []) {
     const { request } = useFetch();
@@ -52,11 +45,7 @@ export function useGlobalChat(initialMessages: GlobalChatMessage[] = []) {
                 }
             );
 
-            if (!res.ok) {
-                throw new Error("Could not fetch messages");
-            }
-
-            setMessages(res.data);
+            setMessages(res);
         } catch (err: any) {
             setError(err?.message ?? "Unknown error has occurred");
         } finally {
@@ -78,7 +67,7 @@ export function useGlobalChat(initialMessages: GlobalChatMessage[] = []) {
             setSending(true);
             setError(null);
 
-            const res = await request<SendMessageResponse>(
+            const newMessage = await request<SendMessageResponse>(
                 links.api.chat.global,
                 {
                     method: "POST",
@@ -89,12 +78,6 @@ export function useGlobalChat(initialMessages: GlobalChatMessage[] = []) {
                     body: JSON.stringify({ body: trimmed }),
                 }
             );
-
-            if (!res.ok) {
-                throw new Error("Could not send message");
-            }
-
-            const newMessage = res.data;
 
             setMessages((prev) => [...prev, newMessage]);
         } catch (err: any) {

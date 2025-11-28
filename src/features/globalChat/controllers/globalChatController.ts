@@ -14,7 +14,9 @@ export const createGlobalChatController = (
     // one endpoint GET = list messages, POST = send message
     async global(ctx: RequestInfo): Promise<Response> {
         const method = ctx.request.method.toUpperCase();
+        console.log("GlobalChatController hit:", method, ctx.request.url);
 
+        // GET: get msg
         if (method === "GET") {
             const result = await service.getMessages();
 
@@ -36,6 +38,7 @@ export const createGlobalChatController = (
             });
         }
 
+        //  POST: send msg
         if (method === "POST") {
             // have to be logged in - middleware will set ctx.user
             const user = ctx.ctx?.user as
@@ -46,11 +49,18 @@ export const createGlobalChatController = (
                 return errorResponse(Errors.UNAUTHORIZED, "Unauthorized", 401);
             }
 
-            const parsed = SendGlobalMessageDto.safeParse(
-                await ctx.request.json
-            );
+            const body = await ctx.request.json().catch((err) => {
+                console.error(
+                    "Error parsing JSON body in globalChatController",
+                    err
+                );
+                return null;
+            });
+
+            const parsed = SendGlobalMessageDto.safeParse(body);
 
             if (!parsed.success) {
+                console.warn("SendGlobalMessageDto validation failed:");
                 return errorResponse(
                     Errors.VALIDATION_ERROR,
                     "Invalid request body"
@@ -83,17 +93,16 @@ export const createGlobalChatController = (
                 );
             }
 
+            await renderRealtimeClients({
+                durableObjectNamespace: env.REALTIME_DURABLE_OBJECT,
+                key: links.pages.dashboard,
+            });
+
             return jsonResult(result, 201, {
                 Allow: "GET, POST",
             });
         }
 
-        await renderRealtimeClients({
-            durableObjectNamespace: env.REALTIME_DURABLE_OBJECT,
-            key: links.pages.dashboard,
-        });
-
-        // everything else than get and post
         return methodNotAllowed(["GET", "POST"]);
     },
 });
