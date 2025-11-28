@@ -1,7 +1,8 @@
 import { AsyncResult } from "@/app/types/result";
 import { Errors } from "@/app/types/errors";
-import profileRepository from "../repository/profileRepository";
-import { ProfileUpdates } from "../controllers/profileController";
+import profileRepository, {
+    ProfileUpdates,
+} from "../repository/profileRepository";
 
 type UserForProfile = {
     id: number;
