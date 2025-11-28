@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useFetch } from "@/app/hooks/useFetch";
 import AuthCard from "../components/AuthCard";
-import FormField from "../components/FormField";
-import PrimaryButton from "../components/PrimaryButton";
+import FormField from "../../../app/components/FormField";
+import PrimaryButton from "../../../app/components/PrimaryButton";
 import { links } from "@/app/links";
 
 export default function Register() {
