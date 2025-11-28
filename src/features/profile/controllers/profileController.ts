@@ -63,6 +63,14 @@ export const createProfileController = (service: typeof profileService) => ({
                     );
                 }
 
+                if (result.reason === Errors.EMAIL_IN_USE) {
+                    return errorResponse(
+                        Errors.EMAIL_IN_USE,
+                        "Email address already in use",
+                        400
+                    );
+                }
+
                 return errorResponse(
                     Errors.INTERNAL_SERVER_ERROR,
                     result.message ?? "Failed to update profile",

@@ -3,6 +3,8 @@ import { Errors } from "@/app/types/errors";
 import profileRepository, {
     ProfileUpdates,
 } from "../repository/profileRepository";
+import authRepository from "@/features/auth/repository/authRepository";
+import { ProfileUpdateInput } from "../dto";
 
 type UserForProfile = {
     id: number;
@@ -62,8 +64,31 @@ export const createProfileService = (repo: typeof profileRepository) => {
 
         async updateProfileForUser(
             user: UserForProfile,
-            updates: ProfileUpdates
+            updates: ProfileUpdateInput
         ): AsyncResult<ProfileData> {
+            const { email, ...profileUpdates } = updates;
+            // first email update f there is any
+            if (email && email !== user.email) {
+                const emailResult = await authRepository.updateUserEmail(
+                    user.id,
+                    email
+                );
+
+                if (!emailResult.ok) {
+                    return {
+                        ok: false,
+                        reason: emailResult.reason,
+                        message:
+                            emailResult.reason === Errors.EMAIL_IN_USE
+                                ? "Email already in use"
+                                : emailResult.message,
+                    };
+                }
+
+                // make sure map gets updated mail
+                user = { ...user, email };
+            }
+
             const updateResult = await repo.updateProfileByUserId(
                 user.id,
                 updates

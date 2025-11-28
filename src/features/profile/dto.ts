@@ -4,8 +4,9 @@ export const ProfileUpdateDto = z
     .object({
         displayName: z.string().min(1).max(100).optional(),
         status: z.string().max(255).optional(),
-        avatarUrl: z.string().max(2048).optional(),
+        avatarUrl: z.url().max(2048).optional(),
         notificationsEnabled: z.boolean().optional(),
+        email: z.email().max(255).optional(),
     })
     .refine(
         (data) => Object.keys(data).length > 0,

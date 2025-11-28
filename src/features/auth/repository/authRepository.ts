@@ -61,6 +61,39 @@ export const createAuthRepository = (dbInstance: typeof db) => ({
             };
         }
     },
+    async updateUserEmail(userId: number, newEmail: string): AsyncResult<void> {
+        try {
+            // chekcing if course first if anyone has this email
+            const existing = await dbInstance
+                .select()
+                .from(users)
+                .where(eq(users.email, newEmail))
+                .limit(1);
+
+            if (existing[0] && existing[0].id !== userId) {
+                return {
+                    ok: false,
+                    reason: Errors.EMAIL_IN_USE,
+                };
+            }
+
+            await dbInstance
+                .update(users)
+                .set({ email: newEmail })
+                .where(eq(users.id, userId));
+
+            return {
+                ok: true,
+                data: undefined,
+            };
+        } catch (error) {
+            console.error("updateUserEmail error", error);
+            return {
+                ok: false,
+                reason: Errors.DATABASE_ERROR,
+            };
+        }
+    },
 });
 
 export const authRepository = createAuthRepository(db);

@@ -68,7 +68,7 @@ export default function Profile() {
                         displayName: name,
                         status,
                         notificationsEnabled,
-                        // email: email,  //  not supported yet. TODO:
+                        email: email,
                     }),
                     credentials: "include",
                 }
@@ -91,6 +91,24 @@ export default function Profile() {
         } catch (error) {
             console.error("Failed to update profile:", error);
             toast.error("Failed to update profile!");
+        }
+    };
+
+    const handleToggleNotifications = async () => {
+        const next = !notificationsEnabled;
+        setNotificationsEnabled(next);
+
+        try {
+            await request<ProfileResponse>(links.api.profile.me, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ notificationsEnabled: next }),
+                credentials: "include",
+            });
+        } catch (error) {
+            console.error("Failed to update notifications:", error);
+            setNotificationsEnabled(!next);
+            toast.error("Failed to update notifications setting");
         }
     };
 
@@ -215,11 +233,7 @@ export default function Profile() {
                             <label className="font-medium">Notifications</label>
                             <button
                                 type="button"
-                                onClick={() =>
-                                    setNotificationsEnabled(
-                                        !notificationsEnabled
-                                    )
-                                }
+                                onClick={handleToggleNotifications}
                                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                                     notificationsEnabled
                                         ? "bg-green-500"
@@ -234,6 +248,7 @@ export default function Profile() {
                                     }`}
                                 />
                             </button>
+
                             <span className="text-sm text-gray-600">
                                 {notificationsEnabled ? "Enabled" : "Disabled"}
                             </span>
