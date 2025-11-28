@@ -1,26 +1,31 @@
 "use client";
+
 import { useAuth } from "@/app/hooks/useAuth";
-import { useState, useRef } from "react";
-import CampusChatAllroundButton from "@/features/profile/components/CampusChatAllroundButton";
-import CampusChatAllroundInputField from "../components/CampusChatAllroundInputField";
-import SideBar from "../components/SideBar";
-import { useFetch } from "@/app/hooks/useFetch";
-import { useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
+import { useFetch } from "@/app/hooks/useFetch";
+import { links } from "@/app/links";
+import FormField from "@/app/components/FormField";
+import PrimaryButton from "@/app/components/PrimaryButton";
+import CampusChatAllroundButton from "@/features/profile/components/CampusChatAllroundButton";
+import SideBar from "@/features/profile/components/SideBar";
+
+type ProfileResponse = {
+    email: string;
+    displayName?: string;
+    status?: string;
+    avatarUrl?: string;
+    notificationsEnabled?: boolean;
+};
 
 export default function Profile() {
     const { user } = useAuth();
-    const { request, loading, error } = useFetch();
+    const { request, loading } = useFetch();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    console.log(user);
-    if (!user) {
-        return <div>Please log in to access your profile.</div>; // for new solition when calling profileRepo.createprofile - this should never be needed.. everyone on register has a profile created auto.
-    }
-
-    const [name, setName] = useState("Leo");
-    const [status, setStatus] = useState("online");
-    const [email, setEmail] = useState("LeoD@hiof.no");
+    const [name, setName] = useState("");
+    const [status, setStatus] = useState("");
+    const [email, setEmail] = useState("");
     const [avatarUrl, setAvatarUrl] = useState("");
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -28,17 +33,15 @@ export default function Profile() {
     useEffect(() => {
         async function loadProfile() {
             try {
-                const data = await request<{
-                    email: string;
-                    displayName?: string;
-                    status?: string;
-                    avatarUrl?: string;
-                    notificationsEnabled?: boolean;
-                }>("/api/v1/profile", {
-                    credentials: "include",
-                });
+                const data = await request<ProfileResponse>(
+                    links.api.profile.me,
+                    {
+                        credentials: "include",
+                    }
+                );
 
                 console.log("Profile data loaded:", data);
+
                 setEmail(data.email || "");
                 setName(data.displayName || "");
                 setStatus(data.status || "");
@@ -46,38 +49,45 @@ export default function Profile() {
                 setNotificationsEnabled(data.notificationsEnabled ?? true);
             } catch (error) {
                 console.error("Failed to load profile:", error);
+                toast.error("Failed to load profile");
             }
         }
 
         loadProfile();
-    }, [user]);
+    }, [user, request]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const updated = await request<{
-                email: string;
-                displayName?: string;
-                status?: string;
-                avatarUrl?: string;
-                notificationsEnabled?: boolean;
-            }>("/api/v1/profile", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    displayName: name,
-                    status: status,
-                    notificationsEnabled,
-                    //email: email, (email update not supported yet - perhaps later..we are not sure here ??
-                }),
-                credentials: "include",
-            });
+            const updated = await request<ProfileResponse>(
+                links.api.profile.me,
+                {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        displayName: name,
+                        status,
+                        notificationsEnabled,
+                        // email: email,  //  not supported yet. TODO:
+                    }),
+                    credentials: "include",
+                }
+            );
 
-            if (updated.displayName !== undefined) setName(updated.displayName);
-            if (updated.status !== undefined) setStatus(updated.status);
-            if (updated.email !== undefined) setEmail(updated.email);
-            if (updated.notificationsEnabled !== undefined)
+            if (updated.displayName !== undefined) {
+                setName(updated.displayName);
+            }
+            if (updated.status !== undefined) {
+                setStatus(updated.status);
+            }
+            if (updated.email !== undefined) {
+                setEmail(updated.email);
+            }
+            if (updated.notificationsEnabled !== undefined) {
                 setNotificationsEnabled(updated.notificationsEnabled);
+            }
+
+            toast.success("Profile updated");
         } catch (error) {
             console.error("Failed to update profile:", error);
             toast.error("Failed to update profile!");
@@ -92,7 +102,7 @@ export default function Profile() {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+        const MAX_FILE_SIZE = 5 * 1024 * 1024;
         const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 
         const isValidType = ALLOWED_TYPES.includes(file.type);
@@ -107,17 +117,18 @@ export default function Profile() {
 
         if (!isValidSize) {
             toast.error(
-                "File size larger than the 5MB limit. Please select a smaller image/avatar?."
+                "File size larger than the 5MB limit. Please select a smaller image/avatar."
             );
             return;
         }
+
         setUploadingAvatar(true);
         try {
             const formData = new FormData();
             formData.append("avatar", file);
 
             const response = await request<{ avatarUrl: string }>(
-                "/api/v1/profile/avatar",
+                links.api.profile.avatar,
                 {
                     method: "POST",
                     body: formData,
@@ -126,38 +137,39 @@ export default function Profile() {
             );
 
             setAvatarUrl(response.avatarUrl);
+            toast.success("Avatar updated");
         } catch (error) {
             console.error("Failed to upload avatar:", error);
+            toast.error("Failed to upload avatar");
         } finally {
             setUploadingAvatar(false);
         }
     };
 
     return (
-        //Sidebar componetn goes here: unsure of exact placement (within/witout main)
         <div className="flex min-h-screen">
             <SideBar />
+
             <main className="flex-1 p-6">
-                {/* Header section here */}
-                <section className=" border-b">
+                <section className="border-b">
                     <h1 className="mb-4 text-4xl font-bold theme-text-color">
                         Profile Settings
                     </h1>
-                    {/* Need separation line here, vert and horizontaøl. */}
                 </section>
 
-                {/* ProfilePic section here */}
                 <section className="mb-6 mt-6 flex items-center gap-4">
-                    <div className="h-20 w-20 rounded-full bg-gray-300 overflow-hidden" />
-                    {avatarUrl ? (
-                        <img
-                            src={avatarUrl}
-                            alt="Profile Pic/avatar"
-                            className="h-full w-full object-cover"
-                        />
-                    ) : (
-                        <div className="h-full w-full bg-gray-300" />
-                    )}
+                    <div className="h-20 w-20 rounded-full bg-gray-300 overflow-hidden">
+                        {avatarUrl ? (
+                            <img
+                                src={avatarUrl}
+                                alt="Profile avatar"
+                                className="h-full w-full object-cover"
+                            />
+                        ) : (
+                            <div className="h-full w-full bg-gray-300" />
+                        )}
+                    </div>
+
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -165,6 +177,7 @@ export default function Profile() {
                         className="hidden"
                         onChange={handleFileChange}
                     />
+
                     <CampusChatAllroundButton
                         size="small"
                         onClick={handleAvatarClick}
@@ -174,33 +187,30 @@ export default function Profile() {
                     </CampusChatAllroundButton>
                 </section>
 
-                {/* Form section cjhange name status etc. here.  */}
                 <section>
                     <form className="space-y-4" onSubmit={handleSubmit}>
-                        <CampusChatAllroundInputField
-                            props={{
-                                label: "Name",
-                                value: name,
-                                onChange: (e) => setName(e.target.value),
-                            }}
-                        />
-                        <CampusChatAllroundInputField
-                            props={{
-                                label: "Status",
-                                value: status,
-                                onChange: (e) => setStatus(e.target.value),
-                            }}
-                        />
-                        <CampusChatAllroundInputField
-                            props={{
-                                label: "Email",
-                                disabled: true,
-                                value: email,
-                                onChange: (e) => setEmail(e.target.value),
-                            }}
+                        <FormField
+                            label="Name"
+                            name="displayName"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
                         />
 
-                        {/* Notification toggle heree, field for this added in profileSchema, migrations ok, hopefulluy no errors on this one on merge.. */}
+                        <FormField
+                            label="Status"
+                            name="status"
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                        />
+
+                        <FormField
+                            label="Email"
+                            name="email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+
                         <div className="flex items-center gap-3">
                             <label className="font-medium">Notifications</label>
                             <button
@@ -229,13 +239,9 @@ export default function Profile() {
                             </span>
                         </div>
 
-                        <CampusChatAllroundButton
-                            type="submit"
-                            disabled={loading}
-                            size="large"
-                        >
+                        <PrimaryButton disabled={loading}>
                             {loading ? "Saving..." : "Save"}
-                        </CampusChatAllroundButton>
+                        </PrimaryButton>
                     </form>
                 </section>
             </main>

@@ -35,7 +35,7 @@ export default defineApp([
             route("/login", () => <LoginPage />),
             route("/register", () => <RegisterPage />),
             route("/dashboard", () => <DashboardPage />),
-            // route("/profile", () => <ProfilePage />),
+            route("/profile", () => <ProfilePage />),
             route("/*", () => <NotFoundPage />),
         ]),
     ]),
