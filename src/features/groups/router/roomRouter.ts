@@ -1,9 +1,9 @@
-import { route } from "rwsdk/router";
-import { roomController } from "../controllers/roomController";
+// import { route } from "rwsdk/router";
+// import { roomController } from "../controllers/roomController";
 
-const ApiBase = "/groups"; 
+// const ApiBase = "/groups";
 
 export const roomRoutes = [
-    route(ApiBase, roomController.getRooms),
-    route(ApiBase + "/create", roomController.createRoom),
+    // route(ApiBase, roomController.getRooms),
+    // route(ApiBase + "/create", roomController.createRoom),
 ];

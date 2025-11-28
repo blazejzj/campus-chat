@@ -1,7 +1,11 @@
 {
   "version": "6",
   "dialect": "sqlite",
+<<<<<<< HEAD
+  "id": "3c176720-7e9e-4889-a86d-27ae6299a1fd",
+=======
   "id": "0904a987-1fce-418d-aef8-fe78ccb053e0",
+>>>>>>> f24568d9dd7b6f8f4fbde8e8a5e16fdfeedbe6e6
   "prevId": "0b708230-e0bc-42f7-b990-d2dd48438290",
   "tables": {
     "profiles": {
@@ -225,9 +229,30 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+<<<<<<< HEAD
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "rooms_slug_unique": {
+          "name": "rooms_slug_unique",
+          "columns": [
+            "slug"
+          ],
+          "isUnique": true
+        }
+      },
+=======
         }
       },
       "indexes": {},
+>>>>>>> f24568d9dd7b6f8f4fbde8e8a5e16fdfeedbe6e6
       "foreignKeys": {
         "rooms_created_by_users_id_fk": {
           "name": "rooms_created_by_users_id_fk",
@@ -730,6 +755,8 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
+<<<<<<< HEAD
+=======
     },
     "profile": {
       "name": "profile",
@@ -782,6 +809,7 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
+>>>>>>> f24568d9dd7b6f8f4fbde8e8a5e16fdfeedbe6e6
     }
   },
   "views": {},

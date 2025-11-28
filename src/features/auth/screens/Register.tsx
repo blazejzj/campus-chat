@@ -5,6 +5,7 @@ import { useFetch } from "@/app/hooks/useFetch";
 import AuthCard from "../components/AuthCard";
 import FormField from "../components/FormField";
 import PrimaryButton from "../components/PrimaryButton";
+import { links } from "@/app/links";
 
 export default function Register() {
     const { request, loading, error, setError } = useFetch();
@@ -40,7 +41,7 @@ export default function Register() {
         });
 
         try {
-            await request("/api/v1/auth/register", {
+            await request(links.api.auth.register, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -49,7 +50,7 @@ export default function Register() {
 
             // using window.location here
             // also, should we just log users in here immediately or just redirect them?
-            window.location.href = "/login";
+            window.location.href = links.pages.dashboard;
         } catch {
             // keep it simple: error is already set by the hook
         }
@@ -61,7 +62,10 @@ export default function Register() {
             footer={
                 <span>
                     Already have an account?{" "}
-                    <a href="/login" className="font-semibold hover:underline">
+                    <a
+                        href={links.pages.login}
+                        className="font-semibold hover:underline"
+                    >
                         Log in
                     </a>
                 </span>

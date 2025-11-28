@@ -1,5 +1,6 @@
 import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
 
+// TODO: Delete this file
 export const profileSchema = sqliteTable("profile", {
     id: integer("id").primaryKey(),
     userId: integer("user_id").notNull(),

@@ -103,7 +103,6 @@ export const createAuthController = (service: typeof authService) => {
                     "Invalid request body"
                 );
             }
-
             const { email, password, displayName } = parsed.data;
             const result = await service.registerUser({
                 email,
