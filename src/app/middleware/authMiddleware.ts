@@ -19,6 +19,9 @@ export async function authMiddleware({
     // public routes
     const isApi = pathname.startsWith("/api/");
 
+    // TODO: change this later probably
+    if (pathname.startsWith("/__realtime")) return;
+
     // public UI routes
     const isUiPublic =
         pathname === links.pages.root ||
@@ -30,6 +33,11 @@ export async function authMiddleware({
         pathname === links.api.auth.login ||
         pathname === links.api.auth.register;
 
+    console.log("authMiddleware", {
+        pathname,
+        isApi,
+        isApiPublic,
+    });
     if (isApi && isApiPublic) return;
 
     const cookies = parseCookie(request.headers.get("cookie") ?? "");
