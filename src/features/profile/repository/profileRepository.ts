@@ -10,7 +10,7 @@ export type ProfileUpdates = {
     displayName?: string;
     status?: string;
     avatarUrl?: string;
-    notificationsEnabled: boolean;
+    notificationsEnabled?: boolean;
 };
 
 export const createProfileRepository = (dbInstance: typeof db) => ({
