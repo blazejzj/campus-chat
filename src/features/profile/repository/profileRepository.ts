@@ -1,55 +1,74 @@
+import { Errors } from "@/app/types/errors";
+import { AsyncResult } from "@/app/types/result";
 import db from "@/server/db";
-import { profiles } from "@/server/db/schema";
+import { profiles } from "@/server/db/userSchema";
 import { eq } from "drizzle-orm";
 
-async function findProfileByUserId(userId: number) {
-    const [profile] = await db
-        .select()
-        .from(profiles)
-        .where(eq(profiles.userId, userId))
-        .limit(1);
+type ProfileRow = typeof profiles.$inferSelect;
 
-    return profile ?? null;
-}
+export type ProfileUpdates = {
+    displayName?: string;
+    status?: string;
+    avatarUrl?: string;
+    notificationsEnabled?: boolean;
+};
 
-async function updateProfileByUserId(
-    userId: number,
-    updates: {
-        displayName?: string;
-        status?: string;
-        avatarUrl?: string;
-        notificationsEnabled?: boolean;
-    }
-) {
-    console.log("in profileRepository.updateProfileByUserId");
-    console.log(
-        "Updating profile for userId:",
-        userId,
-        "with updates:",
-        updates
-    );
+export const createProfileRepository = (dbInstance: typeof db) => ({
+    async findProfileByUserId(userId: number): AsyncResult<ProfileRow | null> {
+        try {
+            const [profile] = await dbInstance
+                .select()
+                .from(profiles)
+                .where(eq(profiles.userId, userId))
+                .limit(1);
 
-    await db
-        .update(profiles)
-        .set({
-            ...updates,
-            updatedAt: new Date(),
-        })
-        .where(eq(profiles.userId, userId));
-}
+            console.log("Loaded profile from DB:", profile);
 
-async function createProfile(userId: number, displayName?: string) {
-    console.log("in profileRepository.createProfile");
-    console.log("Creating profile for userId:", userId);
+            return {
+                ok: true,
+                data: profile ?? null,
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                reason: Errors.DATABASE_ERROR,
+            };
+        }
+    },
 
-    await db.insert(profiles).values({
-        userId,
-        displayName: displayName || "",
-        avatarUrl: "",
-        status: "offline",
-        notificationsEnabled: true,
-        updatedAt: new Date(),
-    });
-}
+    async updateProfileByUserId(
+        userId: number,
+        updates: ProfileUpdates
+    ): AsyncResult<void> {
+        try {
+            console.log("in profileRepository.updateProfileByUserId");
+            console.log(
+                "Updating profile for userId:",
+                userId,
+                "with updates:",
+                updates
+            );
 
-export default { findProfileByUserId, updateProfileByUserId, createProfile };
+            await dbInstance
+                .update(profiles)
+                .set({
+                    ...updates,
+                    updatedAt: new Date(),
+                })
+                .where(eq(profiles.userId, userId));
+
+            return {
+                ok: true,
+                data: undefined,
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                reason: Errors.DATABASE_ERROR,
+            };
+        }
+    },
+});
+
+export const profileRepository = createProfileRepository(db);
+export default profileRepository;

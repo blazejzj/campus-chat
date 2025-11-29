@@ -4,4 +4,3 @@ export * from "./dmSchema";
 export * from "./messageSchema";
 export * from "./fileSchema";
 export * from "./notificationSchema";
-export * from "./profileSchema";

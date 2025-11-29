@@ -1,52 +1,175 @@
-// import { json } from "@/app/utils/responseJson";
-// import { RequestInfo } from "rwsdk/worker";
-// import profileRepository from "@/features/profile/repository/profileRepository";
+import { jsonResult } from "@/app/utils/responseJson";
+import { errorResponse, methodNotAllowed } from "@/app/utils/errorHandler";
+import type { RequestInfo } from "rwsdk/worker";
+import { Errors } from "@/app/types/errors";
+import { ProfileUpdateDto } from "../dto";
+import profileService from "../service/profileService";
+import { User } from "../../../../types/User";
 
-// export async function ProfileController({
-//     request,
-//     ctx,
-// }: RequestInfo): Promise<Response> {
-//     const user = ctx.user as { id: number; email: string } | undefined;
+const MAX_SIZE = 5 * 1024 * 1024;
+const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 
-//     if (!user?.id) {
-//         return json({ error: "Unauthorized" }, 401);
-//     }
+export const createProfileController = (service: typeof profileService) => ({
+    async profile(ctx: RequestInfo): Promise<Response> {
+        const method = ctx.request.method.toUpperCase();
+        const user = ctx.ctx.user as User | null;
 
-//     if (request.method === "PATCH") {
-//         try {
-//             const body = (await request.json()) as {
-//                 displayName?: string;
-//                 status?: string;
-//                 avatarUrl?: string;
-//             };
+        if (!user) {
+            return errorResponse(Errors.UNAUTHORIZED, "Unauthorized", 401);
+        }
 
-//             await profileRepository.updateProfileByUserId(user.id, body);
+        if (method === "GET") {
+            const result = await service.getProfileForUser(user);
+            if (!result.ok) {
+                if (result.reason === Errors.DATABASE_ERROR) {
+                    return errorResponse(
+                        Errors.DATABASE_ERROR,
+                        "Database error while loading profile",
+                        500
+                    );
+                }
 
-//             const updated = await profileRepository.findProfileByUserId(
-//                 user.id
-//             );
-//             return json({
-//                 email: user.email ?? "",
-//                 displayName: updated?.displayName ?? "",
-//                 status: updated?.status ?? "",
-//                 avatarUrl: updated?.avatarUrl ?? "",
-//                 notificationsEnabled: updated?.notificationsEnabled ?? true,
-//             });
-//         } catch {
-//             return json({ error: "Failed to update profile" }, 400);
-//         }
-//     }
+                return errorResponse(
+                    Errors.INTERNAL_SERVER_ERROR,
+                    result.message ?? "Failed to load profile",
+                    500
+                );
+            }
 
-//     const profile = await profileRepository.findProfileByUserId(user.id);
-//     if (!profile) {
-//         return json({ error: "Profile not found" }, 404);
-//     }
+            return jsonResult(result, 200);
+        }
 
-//     return json({
-//         email: user.email ?? "",
-//         displayName: profile.displayName ?? "",
-//         status: profile.status ?? "",
-//         avatarUrl: profile.avatarUrl ?? "",
-//         notificationsEnabled: profile.notificationsEnabled ?? true,
-//     });
-// }
+        if (method === "PATCH") {
+            const parsed = ProfileUpdateDto.safeParse(await ctx.request.json());
+            if (!parsed.success) {
+                return errorResponse(
+                    Errors.VALIDATION_ERROR,
+                    "Invalid request body"
+                );
+            }
+
+            const result = await service.updateProfileForUser(
+                user,
+                parsed.data
+            );
+
+            if (!result.ok) {
+                if (result.reason === Errors.DATABASE_ERROR) {
+                    return errorResponse(
+                        Errors.DATABASE_ERROR,
+                        "Database error while updating profile",
+                        500
+                    );
+                }
+
+                if (result.reason === Errors.EMAIL_IN_USE) {
+                    return errorResponse(
+                        Errors.EMAIL_IN_USE,
+                        "Email address already in use",
+                        400
+                    );
+                }
+
+                if (result.reason === Errors.WRONG_CREDENTIALS) {
+                    return errorResponse(
+                        Errors.WRONG_CREDENTIALS,
+                        result.message ?? "Wrong password",
+                        401
+                    );
+                }
+
+                return errorResponse(
+                    Errors.INTERNAL_SERVER_ERROR,
+                    result.message ?? "Failed to update profile",
+                    500
+                );
+            }
+
+            return jsonResult(result, 200);
+        }
+
+        return methodNotAllowed(["GET", "PATCH"]);
+    },
+
+    async avatar(ctx: RequestInfo): Promise<Response> {
+        const method = ctx.request.method.toUpperCase();
+        const user = ctx.ctx.user as User | null;
+
+        if (!user) {
+            return errorResponse(Errors.UNAUTHORIZED, "Unauthorized", 401);
+        }
+
+        if (method !== "POST") {
+            return methodNotAllowed(["POST"]);
+        }
+
+        try {
+            const formData = await ctx.request.formData();
+            const file = formData.get("avatar") as File | null;
+
+            if (!file) {
+                return errorResponse(
+                    Errors.VALIDATION_ERROR,
+                    "No file uploaded",
+                    400
+                );
+            }
+
+            if (!ALLOWED_TYPES.includes(file.type)) {
+                return errorResponse(
+                    Errors.VALIDATION_ERROR,
+                    "Invalid file type",
+                    400
+                );
+            }
+
+            if (file.size > MAX_SIZE) {
+                return errorResponse(
+                    Errors.VALIDATION_ERROR,
+                    "File is too large",
+                    400
+                );
+            }
+
+            const timestamp = Date.now();
+            const extension = file.name.split(".").pop() ?? "png";
+            const avatarUrl = `/avatars/avatar_${user.id}_${timestamp}.${extension}`;
+
+            const result = await service.updateAvatarForUser(user, avatarUrl);
+
+            if (!result.ok) {
+                if (result.reason === Errors.DATABASE_ERROR) {
+                    return errorResponse(
+                        Errors.DATABASE_ERROR,
+                        "Database error while updating avatar",
+                        500
+                    );
+                }
+
+                return errorResponse(
+                    Errors.INTERNAL_SERVER_ERROR,
+                    result.message ?? "Failed to update avatar",
+                    500
+                );
+            }
+
+            return jsonResult(
+                {
+                    ok: true as const,
+                    data: { avatarUrl: result.data.avatarUrl },
+                },
+                200
+            );
+        } catch (error) {
+            console.error("Error uploading avatar:", error);
+            return errorResponse(
+                Errors.INTERNAL_SERVER_ERROR,
+                "Failed to upload avatar",
+                500
+            );
+        }
+    },
+});
+
+export const profileController = createProfileController(profileService);
+export default profileController;

@@ -128,7 +128,6 @@ export default function DashboardShell({
                 ></div>
             )}
 
-            {/* Global chat-panelet til høyre */}
             <div className="flex-1 bg-red-100">
                 <GlobalChatScreen initialMessages={initialMessages} />
             </div>

@@ -1,1 +1,0 @@
-ALTER TABLE `profile` ADD `notifications_enabled` integer DEFAULT true;

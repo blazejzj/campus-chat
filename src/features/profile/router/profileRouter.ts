@@ -1,8 +1,15 @@
-// import { route } from "rwsdk/router";
-// import { ProfileController } from "../controllers/profileController";
-// import { AvatarController } from "../controllers/avatarController";
+import { route } from "rwsdk/router";
+import profileController from "../controllers/profileController";
 
-export const profileRoutes = [
-    // route("/profile", ProfileController),
-    // route("/profile/avatar", AvatarController),
+type AppRoute = ReturnType<typeof route>;
+
+export const createProfileRoutes = (
+    controller: typeof profileController
+): AppRoute[] => [
+    route("/profile", controller.profile),
+    route("/profile/avatar", controller.avatar),
 ];
+
+export const profileRoutes = createProfileRoutes(profileController);
+
+export default profileRoutes;

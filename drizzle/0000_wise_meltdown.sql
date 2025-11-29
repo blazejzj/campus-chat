@@ -4,6 +4,7 @@ CREATE TABLE `profiles` (
 	`display_name` text,
 	`avatar_url` text,
 	`status` text,
+	`notifications_enabled` integer DEFAULT true,
 	`updated_at` integer,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
@@ -32,9 +33,11 @@ CREATE TABLE `rooms` (
 	`visibility` text,
 	`created_by` integer,
 	`created_at` integer,
+	`slug` text NOT NULL,
 	FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX `rooms_slug_unique` ON `rooms` (`slug`);--> statement-breakpoint
 CREATE TABLE `dm_thread_participants` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`thread_id` integer,

@@ -52,6 +52,10 @@ export const links = {
         chat: {
             global: "/api/v1/chat/global",
         },
+        profile: {
+            me: "/api/v1/profile",
+            avatar: "/api/v1/profile/avatar",
+        },
     },
     pages: {
         root: "/",
