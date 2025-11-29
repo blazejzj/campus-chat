@@ -1,9 +1,45 @@
+"use client";
+
+import { useState } from "react";
+import { useFetch } from "@/app/hooks/useFetch";
+
 interface RoomDetailsPanelProps {
     roomId: string | number;
+    canDelete: boolean;
+    onDeleted: (roomId: string | number) => void;
 }
 
-export default function RoomDetailsPanel({ roomId }: RoomDetailsPanelProps) {
+const API_BASE_PATH = "/api/v1/groups";
+
+export default function RoomDetailsPanel({
+    roomId,
+    canDelete,
+    onDeleted,
+}: RoomDetailsPanelProps) {
     const mockMembers = ["John Doe", "Jane Smith"];
+
+    const { request, error, setError, loading } = useFetch();
+    const [deleting, setDeleting] = useState(false);
+
+    const handleDelete = async () => {
+        if (!canDelete || deleting) return;
+
+        setError("");
+        try {
+            setDeleting(true);
+            await request(`${API_BASE_PATH}/${roomId}`, {
+                method: "DELETE",
+                credentials: "include",
+            });
+
+            onDeleted(roomId);
+        } catch (err: any) {
+            console.error("Error deleting room:", err);
+            setError(err.message || "Could not delete room");
+        } finally {
+            setDeleting(false);
+        }
+    };
 
     return (
         <div className="mt-1 mx-2 mb-3 p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-800">
@@ -36,14 +72,25 @@ export default function RoomDetailsPanel({ roomId }: RoomDetailsPanelProps) {
                 ))}
             </ul>
 
-            <button
-                onClick={() => {
-                    console.log(`TODO: Delete Room ${roomId}`);
-                }}
-                className="w-full px-2 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition shadow-sm text-[11px] font-semibold"
-            >
-                Delete Room
-            </button>
+            {error && (
+                <p className="text-[11px] text-red-600 mb-2 font-medium">
+                    {error}
+                </p>
+            )}
+
+            {canDelete && (
+                <button
+                    onClick={handleDelete}
+                    disabled={deleting || loading}
+                    className={`w-full px-2 py-1 rounded-lg transition shadow-sm text-[11px] font-semibold ${
+                        deleting || loading
+                            ? "bg-red-300 cursor-not-allowed text-white"
+                            : "bg-red-500 hover:bg-red-600 text-white cursor-pointer"
+                    }`}
+                >
+                    {deleting || loading ? "Deleting..." : "Delete Room"}
+                </button>
+            )}
         </div>
     );
 }

@@ -154,6 +154,27 @@ export const createRoomRepository = (dbInstace: typeof db) => ({
             return { ok: false, reason: Errors.DATABASE_ERROR };
         }
     },
+
+    async deleteRoom(roomId: number): AsyncResult<null> {
+        try {
+            // we have delete cascade so this should work
+
+            // delete memberships
+            await dbInstace
+                .delete(roomMemberships)
+                .where(eq(roomMemberships.roomId, roomId));
+
+            // delete messages associated with room
+            await dbInstace.delete(messages).where(eq(messages.roomId, roomId));
+
+            // delete room
+            await dbInstace.delete(rooms).where(eq(rooms.id, roomId));
+
+            return { ok: true, data: null };
+        } catch (error) {
+            return { ok: false, reason: Errors.DATABASE_ERROR };
+        }
+    },
 });
 
 export const roomRepository = createRoomRepository(db);

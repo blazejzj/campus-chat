@@ -8,6 +8,7 @@ export const createRoomRoutes = (
 ): AppRoute[] => [
     route("/groups", controller.getRooms),
     route("/groups/create", controller.createRoom),
+    route("/groups/:roomId", controller.deleteRoom),
 ];
 
 export const roomRoutes = createRoomRoutes(roomController);

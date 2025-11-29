@@ -12,12 +12,14 @@ import { useFetch } from "@/app/hooks/useFetch";
 interface RoomsSidebarProps {
     selectedRoomId: string | number | null;
     onSelectRoom: (roomId: string | number) => void;
+    onRoomDeleted?: (roomId: string | number) => void;
 }
 
 export interface Room {
     id: string | number;
     name: string;
     visibility: "public" | "private";
+    createdBy?: string | null;
 }
 
 interface ErrorDetails {
@@ -37,6 +39,7 @@ const API_BASE_PATH = "/api/v1/groups";
 export default function RoomsSidebar({
     selectedRoomId,
     onSelectRoom,
+    onRoomDeleted,
 }: RoomsSidebarProps) {
     const { user } = useAuth();
     const {
@@ -125,6 +128,17 @@ export default function RoomsSidebar({
         setError("");
     };
 
+    const handleRoomDeleted = (roomId: string | number) => {
+        setRooms((prev) => prev.filter((r) => r.id !== roomId));
+    };
+
+    const handleRoomDeletedInternal = (roomId: string | number) => {
+        setRooms((prev) => prev.filter((r) => r.id !== roomId));
+        if (onRoomDeleted) {
+            onRoomDeleted(roomId);
+        }
+    };
+
     useEffect(() => {
         if (user) loadRooms();
     }, [user]);
@@ -191,13 +205,7 @@ export default function RoomsSidebar({
                 </div>
             </div>
         );
-    }, [
-        isModalOpen,
-        creationError,
-        newRoomName,
-        handleCreateRoom,
-        handleCancelCreation,
-    ]);
+    }, [isModalOpen, creationError, newRoomName]);
 
     if (!user)
         return (
@@ -227,14 +235,30 @@ export default function RoomsSidebar({
             <ErrorDisplay />
 
             <nav className="grow overflow-y-auto p-3 space-y-2 bg-gray-50/60">
-                {rooms.map((room) => (
-                    <RoomCard
-                        key={room.id}
-                        room={room}
-                        isSelected={selectedRoomId === room.id}
-                        onSelect={onSelectRoom}
-                    />
-                ))}
+                {rooms.map((room) => {
+                    const currentUserId = user?.id
+                        ? String(user.id)
+                        : undefined;
+                    const createdBy = room.createdBy
+                        ? String(room.createdBy)
+                        : undefined;
+
+                    const canDelete =
+                        currentUserId && createdBy
+                            ? currentUserId === createdBy
+                            : false;
+
+                    return (
+                        <RoomCard
+                            key={room.id}
+                            room={room}
+                            isSelected={selectedRoomId === room.id}
+                            onSelect={onSelectRoom}
+                            canDelete={canDelete}
+                            onDeleted={handleRoomDeletedInternal}
+                        />
+                    );
+                })}
                 {rooms.length === 0 && !fetchLoading && !creationError && (
                     <div className="p-4 text-center text-gray-400 text-sm italic">
                         No rooms yet – click + to create one.

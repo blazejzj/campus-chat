@@ -143,6 +143,39 @@ export const createRoomService = (repo: typeof roomRepository) => ({
 
         return { ok: true, data: repoResult.data };
     },
+
+    async deleteRoom(
+        roomId: string | number,
+        externalUserId: string | number
+    ): Promise<AsyncResult<null>> {
+        const internalRoomId = toNumericId(roomId);
+        const internalUserId = toNumericId(externalUserId);
+
+        if (internalRoomId === null || internalUserId === null) {
+            return { ok: false, reason: Errors.UNAUTHORIZED };
+        }
+
+        const roomResult = await repo.findRoomById(internalRoomId);
+        if (!roomResult.ok) {
+            return { ok: false, reason: roomResult.reason };
+        }
+
+        const room = roomResult.data;
+        if (!room) {
+            return { ok: false, reason: Errors.ROOM_NOT_FOUND };
+        }
+
+        if (room.createdBy !== internalUserId) {
+            return { ok: false, reason: Errors.UNAUTHORIZED };
+        }
+
+        const deleteResult = await repo.deleteRoom(internalRoomId);
+        if (!deleteResult.ok) {
+            return { ok: false, reason: deleteResult.reason };
+        }
+
+        return { ok: true, data: null };
+    },
 });
 
 export const roomService = createRoomService(roomRepository);

@@ -46,6 +46,13 @@ export default function DashboardScreen({
         setActiveChat("room");
     };
 
+    const handleRoomDeleted = (roomId: string | number) => {
+        if (selectedRoomId === roomId) {
+            setSelectedRoomId(null);
+            setActiveChat("global");
+        }
+    };
+
     const showRoomChat = activeChat === "room" && selectedRoomId != null;
 
     return (
@@ -72,6 +79,7 @@ export default function DashboardScreen({
                     <RoomsSidebar
                         selectedRoomId={selectedRoomId}
                         onSelectRoom={handleSelectRoom}
+                        onRoomDeleted={handleRoomDeleted}
                     />
                 </div>
 

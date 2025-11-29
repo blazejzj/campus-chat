@@ -96,7 +96,58 @@ export const createRoomController = (service: typeof roomService) => ({
                 "Room creation failed"
             );
         }
-        return jsonResult({ ok: true as const, data: serviceResult.room }, 201);
+        return jsonResult({ ok: true, data: serviceResult.room }, 201);
+    },
+
+    async deleteRoom(ctx: RequestInfo): Promise<Response> {
+        const method = ctx.request.method.toUpperCase();
+
+        if (method !== "DELETE") return methodNotAllowed(["DELETE"]);
+
+        const user = ctx.ctx.user as User | null;
+        if (!user) {
+            return errorResponse(
+                Errors.UNAUTHORIZED,
+                "User must be authenticated"
+            );
+        }
+
+        const roomIdParam = ctx.params?.roomId;
+
+        if (!roomIdParam) {
+            return errorResponse(
+                Errors.VALIDATION_ERROR,
+                "Room id parameter is required"
+            );
+        }
+
+        const result = await service.deleteRoom(roomIdParam, user.id);
+        if (!result.ok) {
+            if (result.reason === Errors.UNAUTHORIZED) {
+                return errorResponse(
+                    Errors.UNAUTHORIZED,
+                    "You are not allowed to delete this room"
+                );
+            }
+
+            if (result.reason === Errors.ROOM_NOT_FOUND) {
+                return errorResponse(Errors.ROOM_NOT_FOUND, "Room not found");
+            }
+
+            if (result.reason === Errors.DATABASE_ERROR) {
+                return errorResponse(
+                    Errors.DATABASE_ERROR,
+                    "Database error while deleting room"
+                );
+            }
+
+            return errorResponse(
+                Errors.INTERNAL_SERVER_ERROR,
+                "Failed to delete room"
+            );
+        }
+
+        return jsonResult({ ok: true, data: null });
     },
 });
 
