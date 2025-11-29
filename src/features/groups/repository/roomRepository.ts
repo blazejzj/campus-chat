@@ -155,3 +155,7 @@ export const createRoomRepository = (dbInstace: typeof db) => ({
         }
     },
 });
+
+export const roomRepository = createRoomRepository(db);
+
+export default roomRepository;

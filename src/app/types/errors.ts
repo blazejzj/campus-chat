@@ -6,6 +6,7 @@ export const Errors = {
     DATABASE_ERROR: "DATABASE_ERROR",
     INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR",
     UNAUTHORIZED: "UNAUTHORIZED",
+    ROOM_CREATION_FAILED: "ROOM_CREATION_FAILED",
 } as const;
 
 export type ErrorCode = (typeof Errors)[keyof typeof Errors];
