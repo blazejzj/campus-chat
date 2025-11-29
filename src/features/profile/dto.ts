@@ -4,9 +4,9 @@ export const ProfileUpdateDto = z
     .object({
         displayName: z.string().min(1).max(100).optional(),
         status: z.string().max(255).optional(),
-        avatarUrl: z.string().url().max(2048).optional(),
+        avatarUrl: z.url().max(2048).optional(),
         notificationsEnabled: z.boolean().optional(),
-        email: z.string().email().max(255).optional(),
+        email: z.email().max(255).optional(),
         currentPassword: z.string().min(6).max(255).optional(),
         newPassword: z.string().min(6).max(255).optional(),
         confirmNewPassword: z.string().min(6).max(255).optional(),

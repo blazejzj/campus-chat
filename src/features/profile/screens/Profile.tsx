@@ -71,6 +71,24 @@ export default function Profile() {
     const [newPassword, setNewPassword] = useState("");
     const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
+    const [emailError, setEmailError] = useState<string | null>(null);
+    const [emailPasswordError, setEmailPasswordError] = useState<string | null>(
+        null
+    );
+
+    const [currentPasswordError, setCurrentPasswordError] = useState<
+        string | null
+    >(null);
+    const [newPasswordError, setNewPasswordError] = useState<string | null>(
+        null
+    );
+    const [confirmNewPasswordError, setConfirmNewPasswordError] = useState<
+        string | null
+    >(null);
+    const [passwordFormError, setPasswordFormError] = useState<string | null>(
+        null
+    );
+
     useEffect(() => {
         async function loadProfile() {
             try {
@@ -96,7 +114,7 @@ export default function Profile() {
         if (user?.id) {
             loadProfile();
         }
-    }, [user?.id, request]);
+    }, [user?.id]);
 
     const handleSaveProfileInfo = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -134,13 +152,16 @@ export default function Profile() {
     const handleSaveEmail = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        setEmailError(null);
+        setEmailPasswordError(null);
+
         if (!newEmail || newEmail === email) {
-            toast.error("Please enter a different email");
+            setEmailError("Please enter a different email.");
             return;
         }
 
         if (!emailPassword) {
-            toast.error("Please enter your current password");
+            setEmailPasswordError("Please enter your current password.");
             return;
         }
 
@@ -168,20 +189,54 @@ export default function Profile() {
             toast.success("Email updated");
         } catch (error: any) {
             console.error("Failed to update email:", error);
-            toast.error("Failed to update email");
+
+            const reason =
+                error?.reason ??
+                error?.data?.reason ??
+                error?.response?.data?.reason;
+            const message =
+                error?.message ??
+                error?.data?.message ??
+                error?.response?.data?.message;
+
+            if (reason === "WRONG_CREDENTIALS") {
+                setEmailPasswordError("Wrong password.");
+            } else if (reason === "EMAIL_IN_USE") {
+                setEmailError("That email is already in use.");
+            } else {
+                setEmailError(message || "Failed to update email.");
+                toast.error("Failed to update email");
+            }
         }
     };
 
     const handleSavePassword = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!currentPassword || !newPassword || !confirmNewPassword) {
-            toast.error("Please fill out all password fields");
-            return;
+        setCurrentPasswordError(null);
+        setNewPasswordError(null);
+        setConfirmNewPasswordError(null);
+        setPasswordFormError(null);
+
+        let hasError = false;
+
+        if (!currentPassword) {
+            setCurrentPasswordError("Please enter your current password.");
+            hasError = true;
+        }
+        if (!newPassword) {
+            setNewPasswordError("Please enter a new password.");
+            hasError = true;
+        }
+        if (!confirmNewPassword) {
+            setConfirmNewPasswordError("Please confirm your new password.");
+            hasError = true;
         }
 
+        if (hasError) return;
+
         if (newPassword !== confirmNewPassword) {
-            toast.error("New passwords do not match");
+            setConfirmNewPasswordError("Passwords do not match.");
             return;
         }
 
@@ -202,9 +257,24 @@ export default function Profile() {
             setConfirmNewPassword("");
             setIsEditingPassword(false);
             toast.success("Password changed");
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to change password:", error);
-            toast.error("Failed to change password");
+
+            const reason =
+                error?.reason ??
+                error?.data?.reason ??
+                error?.response?.data?.reason;
+            const message =
+                error?.message ??
+                error?.data?.message ??
+                error?.response?.data?.message;
+
+            if (reason === "WRONG_CREDENTIALS") {
+                setCurrentPasswordError("Wrong current password.");
+            } else {
+                setPasswordFormError(message || "Failed to change password.");
+                toast.error("Failed to change password");
+            }
         }
     };
 
@@ -219,6 +289,10 @@ export default function Profile() {
                 body: JSON.stringify({ notificationsEnabled: next }),
                 credentials: "include",
             });
+
+            toast.success(
+                next ? "Notifications enabled" : "Notifications disabled"
+            );
         } catch (error) {
             console.error("Failed to update notifications:", error);
             setNotificationsEnabled(!next);
@@ -354,10 +428,9 @@ export default function Profile() {
 
                                     <div className="flex-1 space-y-2">
                                         <p className="text-sm text-gray-600">
-                                            Upload a square image (JPG or PNG,
-                                            max 5MB) for the best result.
+                                            JPG or PNG, max 5MB
                                         </p>
-                                        <div className="flex flex-wrap items-center gap-3">
+                                        <div className="flex flex-wrap itemscenter gap-3">
                                             <input
                                                 ref={fileInputRef}
                                                 type="file"
@@ -402,23 +475,25 @@ export default function Profile() {
                                                     <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                                         Name
                                                     </p>
-                                                    <p className="mt-1 text-sm text-gray-900">
+                                                    <p className="mt-1 textsm text-gray-900">
                                                         {displayName ||
                                                             "No name set"}
                                                     </p>
                                                 </>
                                             ) : (
-                                                <FormField
-                                                    label="New name"
-                                                    name="displayName"
-                                                    value={displayName}
-                                                    onChange={(e) =>
-                                                        setDisplayName(
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    placeholder="Enter your name"
-                                                />
+                                                <>
+                                                    <FormField
+                                                        label="New name"
+                                                        name="displayName"
+                                                        value={displayName}
+                                                        onChange={(e) =>
+                                                            setDisplayName(
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        placeholder="Enter your name"
+                                                    />
+                                                </>
                                             )}
                                         </div>
                                         <button
@@ -513,37 +588,66 @@ export default function Profile() {
                                             name="currentPassword"
                                             type="password"
                                             value={currentPassword}
-                                            onChange={(e) =>
+                                            onChange={(e) => {
                                                 setCurrentPassword(
                                                     e.target.value
-                                                )
-                                            }
+                                                );
+                                                setCurrentPasswordError(null);
+                                                setPasswordFormError(null);
+                                            }}
                                             placeholder="Enter your current password"
                                         />
+                                        {currentPasswordError && (
+                                            <p className="mt-1 text-xs text-red-500">
+                                                {currentPasswordError}
+                                            </p>
+                                        )}
 
                                         <FormField
                                             label="New password"
                                             name="newPassword"
                                             type="password"
                                             value={newPassword}
-                                            onChange={(e) =>
-                                                setNewPassword(e.target.value)
-                                            }
+                                            onChange={(e) => {
+                                                setNewPassword(e.target.value);
+                                                setNewPasswordError(null);
+                                                setPasswordFormError(null);
+                                            }}
                                             placeholder="Enter a new password"
                                         />
+                                        {newPasswordError && (
+                                            <p className="mt-1 text-xs text-red-500">
+                                                {newPasswordError}
+                                            </p>
+                                        )}
 
                                         <FormField
                                             label="Confirm new password"
                                             name="confirmNewPassword"
                                             type="password"
                                             value={confirmNewPassword}
-                                            onChange={(e) =>
+                                            onChange={(e) => {
                                                 setConfirmNewPassword(
                                                     e.target.value
-                                                )
-                                            }
+                                                );
+                                                setConfirmNewPasswordError(
+                                                    null
+                                                );
+                                                setPasswordFormError(null);
+                                            }}
                                             placeholder="Repeat new password"
                                         />
+                                        {confirmNewPasswordError && (
+                                            <p className="mt-1 text-xs text-red-500">
+                                                {confirmNewPasswordError}
+                                            </p>
+                                        )}
+
+                                        {passwordFormError && (
+                                            <p className="mt-2 text-xs text-red-500">
+                                                {passwordFormError}
+                                            </p>
+                                        )}
 
                                         <div className="flex flex-wrap gap-3 pt-1">
                                             <PrimaryButton disabled={loading}>
@@ -558,6 +662,14 @@ export default function Profile() {
                                                     setCurrentPassword("");
                                                     setNewPassword("");
                                                     setConfirmNewPassword("");
+                                                    setCurrentPasswordError(
+                                                        null
+                                                    );
+                                                    setNewPasswordError(null);
+                                                    setConfirmNewPasswordError(
+                                                        null
+                                                    );
+                                                    setPasswordFormError(null);
                                                 }}
                                                 className="cursor-pointer text-sm font-medium text-gray-600 hover:underline"
                                             >
@@ -605,22 +717,36 @@ export default function Profile() {
                                             name="newEmail"
                                             type="email"
                                             value={newEmail}
-                                            onChange={(e) =>
-                                                setNewEmail(e.target.value)
-                                            }
+                                            onChange={(e) => {
+                                                setNewEmail(e.target.value);
+                                                setEmailError(null);
+                                            }}
                                             placeholder="Enter your new email"
                                         />
+                                        {emailError && (
+                                            <p className="mt-1 text-xs text-red-500">
+                                                {emailError}
+                                            </p>
+                                        )}
 
                                         <FormField
                                             label="Confirm with password"
                                             name="emailPassword"
                                             type="password"
                                             value={emailPassword}
-                                            onChange={(e) =>
-                                                setEmailPassword(e.target.value)
-                                            }
+                                            onChange={(e) => {
+                                                setEmailPassword(
+                                                    e.target.value
+                                                );
+                                                setEmailPasswordError(null);
+                                            }}
                                             placeholder="Current password"
                                         />
+                                        {emailPasswordError && (
+                                            <p className="mt-1 text-xs text-red-500">
+                                                {emailPasswordError}
+                                            </p>
+                                        )}
 
                                         <p className="text-xs text-red-500">
                                             Note: in a real production app you
@@ -641,6 +767,8 @@ export default function Profile() {
                                                     setIsEditingEmail(false);
                                                     setNewEmail(email);
                                                     setEmailPassword("");
+                                                    setEmailError(null);
+                                                    setEmailPasswordError(null);
                                                 }}
                                                 className="cursor-pointer text-sm font-medium text-gray-600 hover:underline"
                                             >

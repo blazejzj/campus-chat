@@ -20,8 +20,13 @@ export type ProfileData = {
 };
 
 export const createProfileService = (repo: typeof profileRepository) => {
-    async function mapProfile(user: UserForProfile): AsyncResult<ProfileData> {
-        const profileResult = await repo.findProfileByUserId(user.id);
+    async function mapProfileByUserId(
+        userId: number
+    ): AsyncResult<ProfileData> {
+        const [profileResult, userResult] = await Promise.all([
+            repo.findProfileByUserId(userId),
+            authRepository.findUserById(userId),
+        ]);
 
         if (!profileResult.ok) {
             return {
@@ -31,7 +36,24 @@ export const createProfileService = (repo: typeof profileRepository) => {
             };
         }
 
+        if (!userResult.ok) {
+            return {
+                ok: false,
+                reason: userResult.reason,
+                message: userResult.message,
+            };
+        }
+
         const profile = profileResult.data;
+        const userRow = userResult.data;
+
+        if (!userRow) {
+            return {
+                ok: false,
+                reason: Errors.INTERNAL_SERVER_ERROR,
+                message: "User not found for profile",
+            };
+        }
 
         if (!profile) {
             return {
@@ -44,7 +66,7 @@ export const createProfileService = (repo: typeof profileRepository) => {
         return {
             ok: true,
             data: {
-                email: user.email,
+                email: userRow.email,
                 displayName: profile.displayName ?? "",
                 status: profile.status ?? "",
                 avatarUrl: profile.avatarUrl ?? "",
@@ -54,10 +76,10 @@ export const createProfileService = (repo: typeof profileRepository) => {
     }
 
     async function verifyPassword(
-        user: UserForProfile,
+        userId: number,
         password: string
     ): AsyncResult<void> {
-        const userResult = await authRepository.findUserByEmail(user.email);
+        const userResult = await authRepository.findUserById(userId);
 
         if (!userResult.ok) {
             return {
@@ -93,7 +115,7 @@ export const createProfileService = (repo: typeof profileRepository) => {
         async getProfileForUser(
             user: UserForProfile
         ): AsyncResult<ProfileData> {
-            return mapProfile(user);
+            return mapProfileByUserId(user.id);
         },
 
         async updateProfileForUser(
@@ -127,7 +149,7 @@ export const createProfileService = (repo: typeof profileRepository) => {
                 }
 
                 const passwordResult = await verifyPassword(
-                    user,
+                    user.id,
                     currentPassword
                 );
                 if (!passwordResult.ok) {
@@ -206,7 +228,7 @@ export const createProfileService = (repo: typeof profileRepository) => {
                 }
             }
 
-            return mapProfile(nextUser);
+            return mapProfileByUserId(nextUser.id);
         },
 
         async updateAvatarForUser(
@@ -225,7 +247,7 @@ export const createProfileService = (repo: typeof profileRepository) => {
                 };
             }
 
-            return mapProfile(user);
+            return mapProfileByUserId(user.id);
         },
     };
 };

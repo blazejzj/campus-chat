@@ -26,6 +26,25 @@ export const createAuthRepository = (dbInstance: typeof db) => ({
         }
     },
 
+    async findUserById(id: number): AsyncResult<UserRow | null> {
+        try {
+            const rows = await dbInstance
+                .select()
+                .from(users)
+                .where(eq(users.id, id));
+
+            return {
+                ok: true,
+                data: rows[0] ?? null,
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                reason: Errors.DATABASE_ERROR,
+            };
+        }
+    },
+
     async createUser(
         email: string,
         passwordHash: string,
