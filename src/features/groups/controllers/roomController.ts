@@ -62,7 +62,7 @@ export const createRoomController = (service: typeof roomService) => ({
 
         let body;
         try {
-            body: await ctx.request.json();
+            body = await ctx.request.json();
         } catch {
             return errorResponse(Errors.VALIDATION_ERROR, "Invalid JSON Body");
         }
