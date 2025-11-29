@@ -28,7 +28,13 @@ type ApiNotification = {
     readAt: string | null;
 };
 
-export default function RoomInviteNotificationsBell() {
+type RoomInviteNotificationsBellProps = {
+    onAcceptedInvite?: () => void;
+};
+
+export default function RoomInviteNotificationsBell({
+    onAcceptedInvite,
+}: RoomInviteNotificationsBellProps) {
     const { request } = useFetch();
 
     const [notifications, setNotifications] = useState<
@@ -76,7 +82,7 @@ export default function RoomInviteNotificationsBell() {
 
     useEffect(() => {
         load();
-    }, []);
+    }, [load]);
 
     const removeNotification = (id: number) => {
         setNotifications((prev) => prev.filter((n) => n.id !== id));
@@ -92,7 +98,12 @@ export default function RoomInviteNotificationsBell() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ notificationId: nId }),
             });
+
             removeNotification(nId);
+
+            if (onAcceptedInvite) {
+                onAcceptedInvite();
+            }
         } catch (err: any) {
             setActionError(err.message || "Failed to accept invite");
             await load();
@@ -125,7 +136,7 @@ export default function RoomInviteNotificationsBell() {
             <button
                 type="button"
                 onClick={() => setOpen((prev) => !prev)}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-white hover:bg-gray-50 shadow-sm text-xs font-medium text-gray-700"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-white hover:bg-gray-50 shadow-sm text-xs font-medium text-gray-700 cursor-pointer"
             >
                 <span>Notifications</span>
                 {hasNotifications && (
@@ -142,7 +153,7 @@ export default function RoomInviteNotificationsBell() {
                             Room invites
                         </span>
                         <button
-                            className="text-[10px] text-gray-500 hover:text-gray-700"
+                            className="text-[10px] text-gray-500 hover:text-gray-700 cursor-pointer"
                             onClick={load}
                             type="button"
                         >

@@ -24,6 +24,9 @@ export default function DashboardScreen({
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [activeChat, setActiveChat] = useState<ActiveChat>("global");
 
+    // this could have probably been solved so much easier, but I just have no idea
+    const [roomsReloadToken, setRoomsReloadToken] = useState(0);
+
     if (!user) {
         return (
             <div className="flex h-screen items-center justify-center bg-linear-to-br from-gray-50 via-slate-50 to-gray-100">
@@ -81,6 +84,7 @@ export default function DashboardScreen({
                         selectedRoomId={selectedRoomId}
                         onSelectRoom={handleSelectRoom}
                         onRoomDeleted={handleRoomDeleted}
+                        reloadToken={roomsReloadToken}
                     />
                 </div>
 
@@ -151,7 +155,11 @@ export default function DashboardScreen({
                             Online
                         </span>
 
-                        <RoomInviteNotificationsBell />
+                        <RoomInviteNotificationsBell
+                            onAcceptedInvite={() =>
+                                setRoomsReloadToken((prev) => prev + 1)
+                            }
+                        />
                     </div>
                 </header>
 

@@ -13,6 +13,7 @@ interface RoomsSidebarProps {
     selectedRoomId: string | number | null;
     onSelectRoom: (roomId: string | number) => void;
     onRoomDeleted?: (roomId: string | number) => void;
+    reloadToken?: number;
 }
 
 export interface Room {
@@ -40,6 +41,7 @@ export default function RoomsSidebar({
     selectedRoomId,
     onSelectRoom,
     onRoomDeleted,
+    reloadToken,
 }: RoomsSidebarProps) {
     const { user } = useAuth();
     const {
@@ -62,7 +64,6 @@ export default function RoomsSidebar({
             });
             setRooms(data);
         } catch (err) {
-            console.error("Error loading rooms:", err);
             setRooms([]);
         }
     };
@@ -92,8 +93,6 @@ export default function RoomsSidebar({
                             .map((i) => i.message)
                             .join("; ")
                     );
-                } else {
-                    setError(errorData.error || "Could not create a room");
                 }
                 return;
             }
@@ -102,7 +101,6 @@ export default function RoomsSidebar({
             setNewRoomName("");
             setError("");
         } catch (err: any) {
-            console.error("Error creating room:", err);
             const errorData = err.body || err.responseJson || {};
 
             if (errorData.details?.issues?.length) {
@@ -130,10 +128,6 @@ export default function RoomsSidebar({
 
     const handleRoomDeleted = (roomId: string | number) => {
         setRooms((prev) => prev.filter((r) => r.id !== roomId));
-    };
-
-    const handleRoomDeletedInternal = (roomId: string | number) => {
-        setRooms((prev) => prev.filter((r) => r.id !== roomId));
         if (onRoomDeleted) {
             onRoomDeleted(roomId);
         }
@@ -141,7 +135,7 @@ export default function RoomsSidebar({
 
     useEffect(() => {
         if (user) loadRooms();
-    }, [user]);
+    }, [user, reloadToken]);
 
     const ErrorDisplay = () =>
         creationError ? (
@@ -255,13 +249,13 @@ export default function RoomsSidebar({
                             isSelected={selectedRoomId === room.id}
                             onSelect={onSelectRoom}
                             canDelete={canDelete}
-                            onDeleted={handleRoomDeletedInternal}
+                            onDeleted={handleRoomDeleted}
                         />
                     );
                 })}
                 {rooms.length === 0 && !fetchLoading && !creationError && (
                     <div className="p-4 text-center text-gray-400 text-sm italic">
-                        No rooms yet – click + to create one.
+                        No rooms yet - click + to create one.
                     </div>
                 )}
             </nav>
