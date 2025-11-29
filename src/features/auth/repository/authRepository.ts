@@ -1,7 +1,7 @@
 import db from "@/server/db";
-import { users, profiles } from "@/server/db/schema";
+import { users, profiles } from "@/server/db/userSchema";
 import { eq } from "drizzle-orm";
-import { Errors } from "../../../app/types/errors";
+import { Errors } from "@/app/types/errors";
 import { AsyncResult } from "@/app/types/result";
 
 type UserRow = typeof users.$inferSelect;
@@ -9,8 +9,6 @@ type UserRow = typeof users.$inferSelect;
 export const createAuthRepository = (dbInstance: typeof db) => ({
     async findUserByEmail(email: string): AsyncResult<UserRow | null> {
         try {
-            console.log("hereeee");
-            console.log(email);
             const rows = await dbInstance
                 .select()
                 .from(users)
@@ -21,7 +19,6 @@ export const createAuthRepository = (dbInstance: typeof db) => ({
                 data: rows[0] ?? null,
             };
         } catch (error) {
-            console.log(error);
             return {
                 ok: false,
                 reason: Errors.DATABASE_ERROR,
@@ -50,6 +47,9 @@ export const createAuthRepository = (dbInstance: typeof db) => ({
             await dbInstance.insert(profiles).values({
                 userId,
                 displayName,
+                avatarUrl: "",
+                status: "",
+                notificationsEnabled: true,
                 updatedAt: now,
             });
 
@@ -64,16 +64,16 @@ export const createAuthRepository = (dbInstance: typeof db) => ({
             };
         }
     },
+
     async updateUserEmail(userId: number, newEmail: string): AsyncResult<void> {
         try {
-            // chekcing if course first if anyone has this email
-            const existing = await dbInstance
+            const [existing] = await dbInstance
                 .select()
                 .from(users)
                 .where(eq(users.email, newEmail))
                 .limit(1);
 
-            if (existing[0] && existing[0].id !== userId) {
+            if (existing && existing.id !== userId) {
                 return {
                     ok: false,
                     reason: Errors.EMAIL_IN_USE,
@@ -90,7 +90,28 @@ export const createAuthRepository = (dbInstance: typeof db) => ({
                 data: undefined,
             };
         } catch (error) {
-            console.error("updateUserEmail error", error);
+            return {
+                ok: false,
+                reason: Errors.DATABASE_ERROR,
+            };
+        }
+    },
+
+    async updateUserPassword(
+        userId: number,
+        newPasswordHash: string
+    ): AsyncResult<void> {
+        try {
+            await dbInstance
+                .update(users)
+                .set({ passwordHash: newPasswordHash })
+                .where(eq(users.id, userId));
+
+            return {
+                ok: true,
+                data: undefined,
+            };
+        } catch (error) {
             return {
                 ok: false,
                 reason: Errors.DATABASE_ERROR,
@@ -100,5 +121,4 @@ export const createAuthRepository = (dbInstance: typeof db) => ({
 });
 
 export const authRepository = createAuthRepository(db);
-
 export default authRepository;

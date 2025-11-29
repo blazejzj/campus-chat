@@ -4,6 +4,7 @@ import profileRepository from "../repository/profileRepository";
 import authRepository from "@/features/auth/repository/authRepository";
 import { ProfileUpdateInput } from "../dto";
 import bcrypt from "bcryptjs";
+import { hashPassword } from "@/features/auth/utils/hash";
 
 type UserForProfile = {
     id: number;
@@ -106,18 +107,17 @@ export const createProfileService = (repo: typeof profileRepository) => {
                 avatarUrl,
                 notificationsEnabled,
                 currentPassword,
+                newPassword,
             } = updates;
 
             let nextUser = user;
 
-            const wantsEmailChange = email && email !== user.email;
-            const wantsDisplayNameChange =
-                typeof displayName === "string" && displayName.length > 0;
+            const wantsEmailChange =
+                typeof email === "string" && email !== user.email;
+            const wantsPasswordChange =
+                typeof newPassword === "string" && newPassword.length > 0;
 
-            const needsPasswordCheck =
-                wantsEmailChange || wantsDisplayNameChange;
-
-            if (needsPasswordCheck) {
+            if (wantsEmailChange || wantsPasswordChange) {
                 if (!currentPassword) {
                     return {
                         ok: false,
@@ -152,7 +152,23 @@ export const createProfileService = (repo: typeof profileRepository) => {
                     };
                 }
 
-                nextUser = { ...user, email: email! };
+                nextUser = { ...nextUser, email: email! };
+            }
+
+            if (wantsPasswordChange) {
+                const hashed = await hashPassword(newPassword!);
+                const pwdResult = await authRepository.updateUserPassword(
+                    user.id,
+                    hashed
+                );
+
+                if (!pwdResult.ok) {
+                    return {
+                        ok: false,
+                        reason: pwdResult.reason,
+                        message: pwdResult.message,
+                    };
+                }
             }
 
             const profileUpdates: {
@@ -175,17 +191,19 @@ export const createProfileService = (repo: typeof profileRepository) => {
                 profileUpdates.notificationsEnabled = notificationsEnabled;
             }
 
-            const updateResult = await repo.updateProfileByUserId(
-                nextUser.id,
-                profileUpdates
-            );
+            if (Object.keys(profileUpdates).length > 0) {
+                const updateResult = await repo.updateProfileByUserId(
+                    nextUser.id,
+                    profileUpdates
+                );
 
-            if (!updateResult.ok) {
-                return {
-                    ok: false,
-                    reason: updateResult.reason,
-                    message: updateResult.message,
-                };
+                if (!updateResult.ok) {
+                    return {
+                        ok: false,
+                        reason: updateResult.reason,
+                        message: updateResult.message,
+                    };
+                }
             }
 
             return mapProfile(nextUser);
@@ -213,5 +231,4 @@ export const createProfileService = (repo: typeof profileRepository) => {
 };
 
 export const profileService = createProfileService(profileRepository);
-
 export default profileService;

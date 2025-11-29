@@ -18,17 +18,58 @@ type ProfileResponse = {
     notificationsEnabled?: boolean;
 };
 
+const chipButtonClass =
+    "cursor-pointer inline-flex items-center px-3 py-1.5 text-xs font-medium border rounded-full theme-text-color border-current hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary-color)]";
+
+type SettingsSectionProps = {
+    title: string;
+    subtitle?: string;
+    children: React.ReactNode;
+};
+
+function SettingsSection({ title, subtitle, children }: SettingsSectionProps) {
+    return (
+        <section className="bg-white/90 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm p-6 md:p-7 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1.5">
+                <div>
+                    <h2 className="text-base md:text-lg font-semibold text-gray-900">
+                        {title}
+                    </h2>
+                    {subtitle && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                            {subtitle}
+                        </p>
+                    )}
+                </div>
+            </div>
+            {children}
+        </section>
+    );
+}
+
 export default function Profile() {
     const { user } = useAuth();
     const { request, loading } = useFetch();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const [name, setName] = useState("");
+    const [displayName, setDisplayName] = useState("");
     const [status, setStatus] = useState("");
     const [email, setEmail] = useState("");
     const [avatarUrl, setAvatarUrl] = useState("");
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [isEditingStatus, setIsEditingStatus] = useState(false);
+    const [isEditingEmail, setIsEditingEmail] = useState(false);
+    const [isEditingPassword, setIsEditingPassword] = useState(false);
+
+    const [newEmail, setNewEmail] = useState("");
+    const [emailPassword, setEmailPassword] = useState("");
+
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
     useEffect(() => {
         async function loadProfile() {
@@ -40,10 +81,9 @@ export default function Profile() {
                     }
                 );
 
-                console.log("Profile data loaded:", data);
-
                 setEmail(data.email || "");
-                setName(data.displayName || "");
+                setNewEmail(data.email || "");
+                setDisplayName(data.displayName || "");
                 setStatus(data.status || "");
                 setAvatarUrl(data.avatarUrl || "");
                 setNotificationsEnabled(data.notificationsEnabled ?? true);
@@ -56,10 +96,11 @@ export default function Profile() {
         if (user?.id) {
             loadProfile();
         }
-    }, [user?.id]);
+    }, [user?.id, request]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSaveProfileInfo = async (e: React.FormEvent) => {
         e.preventDefault();
+
         try {
             const updated = await request<ProfileResponse>(
                 links.api.profile.me,
@@ -67,31 +108,103 @@ export default function Profile() {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        displayName: name,
+                        displayName,
                         status,
-                        email,
                     }),
                     credentials: "include",
                 }
             );
 
             if (updated.displayName !== undefined) {
-                setName(updated.displayName);
+                setDisplayName(updated.displayName);
             }
             if (updated.status !== undefined) {
                 setStatus(updated.status);
             }
-            if (updated.email !== undefined) {
-                setEmail(updated.email);
-            }
-            if (updated.notificationsEnabled !== undefined) {
-                setNotificationsEnabled(updated.notificationsEnabled);
-            }
 
+            setIsEditingName(false);
+            setIsEditingStatus(false);
             toast.success("Profile updated");
         } catch (error) {
             console.error("Failed to update profile:", error);
-            toast.error("Failed to update profile!");
+            toast.error("Failed to update profile");
+        }
+    };
+
+    const handleSaveEmail = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!newEmail || newEmail === email) {
+            toast.error("Please enter a different email");
+            return;
+        }
+
+        if (!emailPassword) {
+            toast.error("Please enter your current password");
+            return;
+        }
+
+        try {
+            const updated = await request<ProfileResponse>(
+                links.api.profile.me,
+                {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: newEmail,
+                        currentPassword: emailPassword,
+                    }),
+                    credentials: "include",
+                }
+            );
+
+            if (updated.email !== undefined) {
+                setEmail(updated.email);
+                setNewEmail(updated.email);
+            }
+
+            setEmailPassword("");
+            setIsEditingEmail(false);
+            toast.success("Email updated");
+        } catch (error: any) {
+            console.error("Failed to update email:", error);
+            toast.error("Failed to update email");
+        }
+    };
+
+    const handleSavePassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!currentPassword || !newPassword || !confirmNewPassword) {
+            toast.error("Please fill out all password fields");
+            return;
+        }
+
+        if (newPassword !== confirmNewPassword) {
+            toast.error("New passwords do not match");
+            return;
+        }
+
+        try {
+            await request<ProfileResponse>(links.api.profile.me, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    currentPassword,
+                    newPassword,
+                    confirmNewPassword,
+                }),
+                credentials: "include",
+            });
+
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmNewPassword("");
+            setIsEditingPassword(false);
+            toast.success("Password changed");
+        } catch (error) {
+            console.error("Failed to change password:", error);
+            toast.error("Failed to change password");
         }
     };
 
@@ -165,101 +278,416 @@ export default function Profile() {
         }
     };
 
+    if (!user) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-gray-50 via-slate-50 to-gray-100">
+                <div className="bg-white rounded-2xl shadow-md px-8 py-6 text-center max-w-md">
+                    <h1 className="text-xl font-semibold mb-2 theme-text-color">
+                        Please log in
+                    </h1>
+                    <p className="text-sm text-gray-500">
+                        You need an account to access your profile settings.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    const userInitial =
+        (displayName && displayName[0]?.toUpperCase()) ||
+        user.email[0]?.toUpperCase() ||
+        "U";
+
     return (
-        <div className="flex min-h-screen">
+        <div className="flex min-h-screen bg-linear-to-br from-gray-50 via-slate-50 to-gray-100">
             <SideBar />
 
-            <main className="flex-1 p-6">
-                <section className="border-b">
-                    <h1 className="mb-4 text-4xl font-bold theme-text-color">
-                        Profile Settings
-                    </h1>
-                </section>
-
-                <section className="mb-6 mt-6 flex items-center gap-4">
-                    <div className="h-20 w-20 rounded-full bg-gray-300 overflow-hidden">
-                        {avatarUrl ? (
-                            <img
-                                src={avatarUrl}
-                                alt="Profile avatar"
-                                className="h-full w-full object-cover"
-                            />
-                        ) : (
-                            <div className="h-full w-full bg-gray-300" />
-                        )}
-                    </div>
-
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png"
-                        className="hidden"
-                        onChange={handleFileChange}
-                    />
-
-                    <CampusChatAllroundButton
-                        size="small"
-                        onClick={handleAvatarClick}
-                        disabled={uploadingAvatar}
-                    >
-                        {uploadingAvatar ? "Uploading..." : "Change picture"}
-                    </CampusChatAllroundButton>
-                </section>
-
-                <section>
-                    <form className="space-y-4" onSubmit={handleSubmit}>
-                        <FormField
-                            label="Name"
-                            name="displayName"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                        />
-
-                        <FormField
-                            label="Status"
-                            name="status"
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                        />
-
-                        <FormField
-                            label="Email"
-                            name="email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-
-                        <div className="flex items-center gap-3">
-                            <label className="font-medium">Notifications</label>
-                            <button
-                                type="button"
-                                onClick={handleToggleNotifications}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                    notificationsEnabled
-                                        ? "bg-green-500"
-                                        : "bg-gray-300"
-                                }`}
-                            >
-                                <span
-                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                        notificationsEnabled
-                                            ? "translate-x-6"
-                                            : "translate-x-1"
-                                    }`}
-                                />
-                            </button>
-
-                            <span className="text-sm text-gray-600">
-                                {notificationsEnabled ? "Enabled" : "Disabled"}
-                            </span>
+            <main className="flex-1 px-4 py-6 md:px-8 md:py-8 lg:px-10 lg:py-10 overflow-y-auto">
+                <div className="max-w-5xl mx-auto space-y-8">
+                    <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+                                Account
+                            </p>
+                            <h1 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
+                                Profile Settings
+                            </h1>
+                            <p className="mt-2 text-sm text-gray-500 max-w-xl">
+                                Update your personal details, security settings,
+                                and how we contact you.
+                            </p>
                         </div>
 
-                        <PrimaryButton disabled={loading}>
-                            {loading ? "Saving..." : "Save"}
-                        </PrimaryButton>
-                    </form>
-                </section>
+                        <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl px-4 py-3 shadow-sm">
+                            <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-xs font-semibold theme-text-color">
+                                {userInitial}
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-sm font-medium text-gray-900 truncate max-w-40 md:max-w-[220px]">
+                                    {displayName || user.email}
+                                </span>
+                                <span className="text-xs text-gray-500 truncate max-w-40 md:max-w-[220px]">
+                                    {email}
+                                </span>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+                        <div className="space-y-6">
+                            <SettingsSection
+                                title="Profile picture"
+                                subtitle="A clear photo makes it easier for others to recognize you."
+                            >
+                                <div className="flex items-center gap-5">
+                                    <div className="relative h-20 w-20 md:h-24 md:w-24 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-lg md:text-2xl font-semibold text-gray-500 ring-2 ring-white shadow-sm">
+                                        {avatarUrl ? (
+                                            <img
+                                                src={avatarUrl}
+                                                alt="Profile avatar"
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            <span>{userInitial}</span>
+                                        )}
+                                    </div>
+
+                                    <div className="flex-1 space-y-2">
+                                        <p className="text-sm text-gray-600">
+                                            Upload a square image (JPG or PNG,
+                                            max 5MB) for the best result.
+                                        </p>
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <input
+                                                ref={fileInputRef}
+                                                type="file"
+                                                accept="image/jpeg,image/png"
+                                                className="hidden"
+                                                onChange={handleFileChange}
+                                            />
+
+                                            <CampusChatAllroundButton
+                                                size="small"
+                                                onClick={handleAvatarClick}
+                                                disabled={uploadingAvatar}
+                                                className="cursor-pointer"
+                                            >
+                                                {uploadingAvatar
+                                                    ? "Uploading..."
+                                                    : "Change picture"}
+                                            </CampusChatAllroundButton>
+                                            {avatarUrl && (
+                                                <span className="text-xs text-gray-400">
+                                                    Click to replace your
+                                                    current photo
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </SettingsSection>
+
+                            <SettingsSection
+                                title="Profile info"
+                                subtitle="Basic public information others can see."
+                            >
+                                <form
+                                    className="space-y-4"
+                                    onSubmit={handleSaveProfileInfo}
+                                >
+                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                        <div className="flex-1">
+                                            {!isEditingName ? (
+                                                <>
+                                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                                        Name
+                                                    </p>
+                                                    <p className="mt-1 text-sm text-gray-900">
+                                                        {displayName ||
+                                                            "No name set"}
+                                                    </p>
+                                                </>
+                                            ) : (
+                                                <FormField
+                                                    label="New name"
+                                                    name="displayName"
+                                                    value={displayName}
+                                                    onChange={(e) =>
+                                                        setDisplayName(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    placeholder="Enter your name"
+                                                />
+                                            )}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setIsEditingName(
+                                                    (prev) => !prev
+                                                )
+                                            }
+                                            className={chipButtonClass}
+                                        >
+                                            {isEditingName
+                                                ? "Cancel"
+                                                : "Change name"}
+                                        </button>
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                        <div className="flex-1">
+                                            {!isEditingStatus ? (
+                                                <>
+                                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                                        Status
+                                                    </p>
+                                                    <p className="mt-1 text-sm text-gray-900">
+                                                        {status ||
+                                                            "No status set"}
+                                                    </p>
+                                                </>
+                                            ) : (
+                                                <FormField
+                                                    label="New status"
+                                                    name="status"
+                                                    value={status}
+                                                    onChange={(e) =>
+                                                        setStatus(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    placeholder="Share how you feel or what you do"
+                                                />
+                                            )}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setIsEditingStatus(
+                                                    (prev) => !prev
+                                                )
+                                            }
+                                            className={chipButtonClass}
+                                        >
+                                            {isEditingStatus
+                                                ? "Cancel"
+                                                : "Change status"}
+                                        </button>
+                                    </div>
+
+                                    {(isEditingName || isEditingStatus) && (
+                                        <div className="pt-2">
+                                            <PrimaryButton disabled={loading}>
+                                                {loading
+                                                    ? "Saving..."
+                                                    : "Save changes"}
+                                            </PrimaryButton>
+                                        </div>
+                                    )}
+                                </form>
+                            </SettingsSection>
+
+                            <SettingsSection
+                                title="Password"
+                                subtitle="Keep your account secure."
+                            >
+                                {!isEditingPassword ? (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setIsEditingPassword(true)
+                                        }
+                                        className={chipButtonClass}
+                                    >
+                                        Change password
+                                    </button>
+                                ) : (
+                                    <form
+                                        className="space-y-3"
+                                        onSubmit={handleSavePassword}
+                                    >
+                                        <FormField
+                                            label="Current password"
+                                            name="currentPassword"
+                                            type="password"
+                                            value={currentPassword}
+                                            onChange={(e) =>
+                                                setCurrentPassword(
+                                                    e.target.value
+                                                )
+                                            }
+                                            placeholder="Enter your current password"
+                                        />
+
+                                        <FormField
+                                            label="New password"
+                                            name="newPassword"
+                                            type="password"
+                                            value={newPassword}
+                                            onChange={(e) =>
+                                                setNewPassword(e.target.value)
+                                            }
+                                            placeholder="Enter a new password"
+                                        />
+
+                                        <FormField
+                                            label="Confirm new password"
+                                            name="confirmNewPassword"
+                                            type="password"
+                                            value={confirmNewPassword}
+                                            onChange={(e) =>
+                                                setConfirmNewPassword(
+                                                    e.target.value
+                                                )
+                                            }
+                                            placeholder="Repeat new password"
+                                        />
+
+                                        <div className="flex flex-wrap gap-3 pt-1">
+                                            <PrimaryButton disabled={loading}>
+                                                {loading
+                                                    ? "Saving..."
+                                                    : "Save password"}
+                                            </PrimaryButton>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsEditingPassword(false);
+                                                    setCurrentPassword("");
+                                                    setNewPassword("");
+                                                    setConfirmNewPassword("");
+                                                }}
+                                                className="cursor-pointer text-sm font-medium text-gray-600 hover:underline"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </form>
+                                )}
+                            </SettingsSection>
+                        </div>
+
+                        <div className="space-y-6">
+                            <SettingsSection
+                                title="Email"
+                                subtitle="Used for login and important updates."
+                            >
+                                {!isEditingEmail ? (
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div>
+                                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                                Current email
+                                            </p>
+                                            <p className="mt-1 text-sm font-medium text-gray-900 break-all">
+                                                {email}
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setIsEditingEmail(true)
+                                            }
+                                            className={chipButtonClass}
+                                        >
+                                            Change email
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <form
+                                        className="space-y-3"
+                                        onSubmit={handleSaveEmail}
+                                    >
+                                        <FormField
+                                            label="New email"
+                                            name="newEmail"
+                                            type="email"
+                                            value={newEmail}
+                                            onChange={(e) =>
+                                                setNewEmail(e.target.value)
+                                            }
+                                            placeholder="Enter your new email"
+                                        />
+
+                                        <FormField
+                                            label="Confirm with password"
+                                            name="emailPassword"
+                                            type="password"
+                                            value={emailPassword}
+                                            onChange={(e) =>
+                                                setEmailPassword(e.target.value)
+                                            }
+                                            placeholder="Current password"
+                                        />
+
+                                        <p className="text-xs text-red-500">
+                                            Note: in a real production app you
+                                            would also send a verification email
+                                            and only update the address once it
+                                            has been confirmed.
+                                        </p>
+
+                                        <div className="flex flex-wrap gap-3 pt-1">
+                                            <PrimaryButton disabled={loading}>
+                                                {loading
+                                                    ? "Saving..."
+                                                    : "Save email"}
+                                            </PrimaryButton>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsEditingEmail(false);
+                                                    setNewEmail(email);
+                                                    setEmailPassword("");
+                                                }}
+                                                className="cursor-pointer text-sm font-medium text-gray-600 hover:underline"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </form>
+                                )}
+                            </SettingsSection>
+
+                            <SettingsSection
+                                title="Notifications"
+                                subtitle="Control when we bother you."
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={handleToggleNotifications}
+                                            className={`cursor-pointer relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-(--primary-color) ${
+                                                notificationsEnabled
+                                                    ? "theme-bg-color"
+                                                    : "bg-gray-300"
+                                            }`}
+                                        >
+                                            <span
+                                                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                                                    notificationsEnabled
+                                                        ? "translate-x-6"
+                                                        : "translate-x-1"
+                                                }`}
+                                            />
+                                        </button>
+
+                                        <span className="text-sm font-medium text-gray-800">
+                                            Enable notifications
+                                        </span>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                    We'll only send you important updates
+                                    related to your account and activity.
+                                </p>
+                            </SettingsSection>
+                        </div>
+                    </div>
+                </div>
             </main>
         </div>
     );

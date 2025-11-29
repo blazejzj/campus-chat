@@ -71,5 +71,4 @@ export const createProfileRepository = (dbInstance: typeof db) => ({
 });
 
 export const profileRepository = createProfileRepository(db);
-
 export default profileRepository;
