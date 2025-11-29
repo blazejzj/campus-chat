@@ -172,7 +172,6 @@ export default function DashboardScreen({
                 </main>
             </div>
 
-            {/* Overlay bak sidebar på mobil */}
             {isSidebarOpen && (
                 <div
                     onClick={() => setIsSidebarOpen(false)}

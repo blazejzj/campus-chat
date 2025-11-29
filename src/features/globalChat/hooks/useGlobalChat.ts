@@ -79,7 +79,15 @@ export function useGlobalChat(initialMessages: GlobalChatMessage[] = []) {
                 }
             );
 
-            setMessages((prev) => [...prev, newMessage]);
+            // trying my hardest to not have duplicate messages xD
+            // this stuff is so annoying, sending a message causes duplicate because it renders it
+            // but also the one you "sent"
+            // this seems to fix it.
+            setMessages((prev) => {
+                const exists = prev.some((m) => m.id === newMessage.id);
+                if (exists) return prev;
+                return [...prev, newMessage];
+            });
         } catch (err: any) {
             setError(err?.message ?? "Unknown error has occurred");
         } finally {
