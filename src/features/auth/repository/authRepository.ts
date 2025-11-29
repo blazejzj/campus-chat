@@ -9,6 +9,8 @@ type UserRow = typeof users.$inferSelect;
 export const createAuthRepository = (dbInstance: typeof db) => ({
     async findUserByEmail(email: string): AsyncResult<UserRow | null> {
         try {
+            console.log("hereeee");
+            console.log(email);
             const rows = await dbInstance
                 .select()
                 .from(users)
@@ -19,6 +21,7 @@ export const createAuthRepository = (dbInstance: typeof db) => ({
                 data: rows[0] ?? null,
             };
         } catch (error) {
+            console.log(error);
             return {
                 ok: false,
                 reason: Errors.DATABASE_ERROR,

@@ -3,6 +3,7 @@ import { Errors } from "@/app/types/errors";
 import profileRepository from "../repository/profileRepository";
 import authRepository from "@/features/auth/repository/authRepository";
 import { ProfileUpdateInput } from "../dto";
+import bcrypt from "bcryptjs";
 
 type UserForProfile = {
     id: number;
@@ -51,6 +52,42 @@ export const createProfileService = (repo: typeof profileRepository) => {
         };
     }
 
+    async function verifyPassword(
+        user: UserForProfile,
+        password: string
+    ): AsyncResult<void> {
+        const userResult = await authRepository.findUserByEmail(user.email);
+
+        if (!userResult.ok) {
+            return {
+                ok: false,
+                reason: userResult.reason,
+                message: "Failed to load user",
+            };
+        }
+
+        const userRow = userResult.data;
+
+        if (!userRow) {
+            return {
+                ok: false,
+                reason: Errors.WRONG_CREDENTIALS,
+                message: "Wrong password",
+            };
+        }
+
+        const match = await bcrypt.compare(password, userRow.passwordHash);
+        if (!match) {
+            return {
+                ok: false,
+                reason: Errors.WRONG_CREDENTIALS,
+                message: "Wrong password",
+            };
+        }
+
+        return { ok: true, data: undefined };
+    }
+
     return {
         async getProfileForUser(
             user: UserForProfile
@@ -62,13 +99,46 @@ export const createProfileService = (repo: typeof profileRepository) => {
             user: UserForProfile,
             updates: ProfileUpdateInput
         ): AsyncResult<ProfileData> {
-            const { email, ...profileUpdates } = updates;
+            const {
+                email,
+                displayName,
+                status,
+                avatarUrl,
+                notificationsEnabled,
+                currentPassword,
+            } = updates;
+
             let nextUser = user;
 
-            if (email && email !== user.email) {
+            const wantsEmailChange = email && email !== user.email;
+            const wantsDisplayNameChange =
+                typeof displayName === "string" && displayName.length > 0;
+
+            const needsPasswordCheck =
+                wantsEmailChange || wantsDisplayNameChange;
+
+            if (needsPasswordCheck) {
+                if (!currentPassword) {
+                    return {
+                        ok: false,
+                        reason: Errors.WRONG_CREDENTIALS,
+                        message: "Current password is required",
+                    };
+                }
+
+                const passwordResult = await verifyPassword(
+                    user,
+                    currentPassword
+                );
+                if (!passwordResult.ok) {
+                    return passwordResult;
+                }
+            }
+
+            if (wantsEmailChange) {
                 const emailResult = await authRepository.updateUserEmail(
                     user.id,
-                    email
+                    email!
                 );
 
                 if (!emailResult.ok) {
@@ -82,7 +152,27 @@ export const createProfileService = (repo: typeof profileRepository) => {
                     };
                 }
 
-                nextUser = { ...user, email };
+                nextUser = { ...user, email: email! };
+            }
+
+            const profileUpdates: {
+                displayName?: string;
+                status?: string;
+                avatarUrl?: string;
+                notificationsEnabled?: boolean;
+            } = {};
+
+            if (displayName !== undefined) {
+                profileUpdates.displayName = displayName;
+            }
+            if (status !== undefined) {
+                profileUpdates.status = status;
+            }
+            if (avatarUrl !== undefined) {
+                profileUpdates.avatarUrl = avatarUrl;
+            }
+            if (notificationsEnabled !== undefined) {
+                profileUpdates.notificationsEnabled = notificationsEnabled;
             }
 
             const updateResult = await repo.updateProfileByUserId(

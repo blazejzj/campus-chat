@@ -10,7 +10,6 @@ const MAX_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 
 export const createProfileController = (service: typeof profileService) => ({
-    // route -> /api/v1/profile  (GET, PATCH)
     async profile(ctx: RequestInfo): Promise<Response> {
         const method = ctx.request.method.toUpperCase();
         const user = ctx.ctx.user as User | null;
@@ -71,6 +70,14 @@ export const createProfileController = (service: typeof profileService) => ({
                     );
                 }
 
+                if (result.reason === Errors.WRONG_CREDENTIALS) {
+                    return errorResponse(
+                        Errors.WRONG_CREDENTIALS,
+                        result.message ?? "Wrong password",
+                        401
+                    );
+                }
+
                 return errorResponse(
                     Errors.INTERNAL_SERVER_ERROR,
                     result.message ?? "Failed to update profile",
@@ -84,7 +91,6 @@ export const createProfileController = (service: typeof profileService) => ({
         return methodNotAllowed(["GET", "PATCH"]);
     },
 
-    // route -> /api/v1/profile/avatar (POST)
     async avatar(ctx: RequestInfo): Promise<Response> {
         const method = ctx.request.method.toUpperCase();
         const user = ctx.ctx.user as User | null;
@@ -125,7 +131,6 @@ export const createProfileController = (service: typeof profileService) => ({
                 );
             }
 
-            // TODO: real R2 later
             const timestamp = Date.now();
             const extension = file.name.split(".").pop() ?? "png";
             const avatarUrl = `/avatars/avatar_${user.id}_${timestamp}.${extension}`;

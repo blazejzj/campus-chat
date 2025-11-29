@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 
 export const ProfileUpdateDto = z
     .object({
@@ -7,9 +7,14 @@ export const ProfileUpdateDto = z
         avatarUrl: z.url().max(2048).optional(),
         notificationsEnabled: z.boolean().optional(),
         email: z.email().max(255).optional(),
+        currentPassword: z.string().min(6).max(255).optional(),
     })
     .refine(
-        (data) => Object.keys(data).length > 0,
+        (data) =>
+            Object.entries(data).some(
+                ([key, value]) =>
+                    key !== "currentPassword" && value !== undefined
+            ),
         "Atleast one field must be provided"
     );
 

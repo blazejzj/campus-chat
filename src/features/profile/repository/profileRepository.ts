@@ -59,7 +59,7 @@ export const createProfileRepository = (dbInstance: typeof db) => ({
 
             return {
                 ok: true,
-                data: undefined, // we probably wont return anything here under updates
+                data: undefined,
             };
         } catch (error) {
             return {

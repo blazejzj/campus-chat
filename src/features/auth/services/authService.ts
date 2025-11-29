@@ -15,6 +15,7 @@ export const createAuthService = (repo: typeof authRepository) => ({
         password: string;
         displayName: string;
     }): AsyncResult<{ id: number }> {
+        console.log("here");
         const userResult = await repo.findUserByEmail(email);
 
         if (!userResult.ok) {
