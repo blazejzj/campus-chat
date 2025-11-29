@@ -5,8 +5,10 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { RoomCreateInput } from "../dto";
 import { messages } from "@/server/db/messageSchema";
 import db from "@/server/db";
+import { profiles, users } from "@/server/db/userSchema";
+import { notifications } from "@/server/db/notificationSchema";
 
-// TODO: Prorably move this to utils laters
+// TODO: Probably move this to utils later
 // slugify here is not mine: https://dev.to/bybydev/how-to-slugify-a-string-in-javascript-4o9n
 const makeRoomSlug = (name: string): string => {
     const base = name
@@ -49,7 +51,7 @@ export const createRoomRepository = (dbInstace: typeof db) => ({
                 .insert(rooms)
                 .values({
                     name: data.name,
-                    visibility: "private", // this could potentially be removed, we keep this field incase we want additioanl functionality
+                    visibility: "private", // keep field for future extension
                     createdBy: data.createdBy,
                     createdAt: now,
                     slug,
@@ -71,7 +73,7 @@ export const createRoomRepository = (dbInstace: typeof db) => ({
         }
     },
 
-    // check if an user is authorized to get in this room
+    // check if a user is authorized to get in this room
     async findRoomIfAuthorized(
         roomId: number,
         userId: number
@@ -133,7 +135,7 @@ export const createRoomRepository = (dbInstace: typeof db) => ({
         }
     },
 
-    // paginated msges in a room - nice for chat history later
+    // paginated msgs in a room - nice for chat history later
     async getPaginatedMessages(
         roomId: number,
         limit: number,
@@ -150,7 +152,7 @@ export const createRoomRepository = (dbInstace: typeof db) => ({
 
             return { ok: true, data: rows };
         } catch (error) {
-            // TODO: errorsrsorosrsrs here too!!!
+            // TODO: errors here too
             return { ok: false, reason: Errors.DATABASE_ERROR };
         }
     },
@@ -169,6 +171,175 @@ export const createRoomRepository = (dbInstace: typeof db) => ({
 
             // delete room
             await dbInstace.delete(rooms).where(eq(rooms.id, roomId));
+
+            return { ok: true, data: null };
+        } catch (error) {
+            return { ok: false, reason: Errors.DATABASE_ERROR };
+        }
+    },
+
+    async findUserByEmail(
+        email: string
+    ): AsyncResult<{ id: number; email: string } | null> {
+        try {
+            const [user] = await dbInstace
+                .select({
+                    id: users.id,
+                    email: users.email,
+                })
+                .from(users)
+                .where(eq(users.email, email));
+
+            return { ok: true, data: user ?? null };
+        } catch (error) {
+            return { ok: false, reason: Errors.DATABASE_ERROR };
+        }
+    },
+
+    async findUserById(
+        id: number
+    ): AsyncResult<{ id: number; email: string } | null> {
+        try {
+            const [user] = await dbInstace
+                .select({
+                    id: users.id,
+                    email: users.email,
+                })
+                .from(users)
+                .where(eq(users.id, id));
+
+            return { ok: true, data: user ?? null };
+        } catch (error) {
+            return { ok: false, reason: Errors.DATABASE_ERROR };
+        }
+    },
+
+    async isUserMemberOfRoom(
+        roomId: number,
+        userId: number
+    ): AsyncResult<boolean> {
+        try {
+            const [row] = await dbInstace
+                .select({ id: roomMemberships.id })
+                .from(roomMemberships)
+                .where(
+                    and(
+                        eq(roomMemberships.roomId, roomId),
+                        eq(roomMemberships.userId, userId)
+                    )
+                )
+                .limit(1);
+
+            return { ok: true, data: !!row };
+        } catch (error) {
+            return { ok: false, reason: Errors.DATABASE_ERROR };
+        }
+    },
+
+    async createRoomInviteNotification(params: {
+        userId: number;
+        roomId: number;
+        roomName: string;
+        invitedByUserId: number;
+        invitedByEmail: string;
+    }): AsyncResult<null> {
+        try {
+            const now = new Date();
+
+            const payload = JSON.stringify({
+                roomId: params.roomId,
+                roomName: params.roomName,
+                invitedByUserId: params.invitedByUserId,
+                invitedByEmail: params.invitedByEmail,
+            });
+
+            await dbInstace.insert(notifications).values({
+                userId: params.userId,
+                type: "room_invite",
+                payload,
+                createdAt: now,
+                readAt: null,
+            });
+
+            return { ok: true, data: null };
+        } catch (error) {
+            return { ok: false, reason: Errors.DATABASE_ERROR };
+        }
+    },
+
+    async getRoomMembers(
+        roomId: number
+    ): AsyncResult<
+        { id: number; email: string; displayName: string | null }[]
+    > {
+        try {
+            const rows = await dbInstace
+                .select({
+                    id: users.id,
+                    email: users.email,
+                    displayName: profiles.displayName,
+                })
+                .from(roomMemberships)
+                .innerJoin(users, eq(roomMemberships.userId, users.id))
+                .leftJoin(profiles, eq(profiles.userId, users.id))
+                .where(eq(roomMemberships.roomId, roomId));
+
+            return { ok: true, data: rows };
+        } catch (error) {
+            return { ok: false, reason: Errors.DATABASE_ERROR };
+        }
+    },
+
+    async getNotificationByIdForUser(
+        notificationId: number,
+        userId: number
+    ): AsyncResult<typeof notifications.$inferSelect | null> {
+        try {
+            const [row] = await dbInstace
+                .select()
+                .from(notifications)
+                .where(
+                    and(
+                        eq(notifications.id, notificationId),
+                        eq(notifications.userId, userId)
+                    )
+                )
+                .limit(1);
+
+            return { ok: true, data: row ?? null };
+        } catch (error) {
+            return { ok: false, reason: Errors.DATABASE_ERROR };
+        }
+    },
+
+    async markNotificationRead(notificationId: number): AsyncResult<null> {
+        try {
+            const now = new Date();
+            await dbInstace
+                .update(notifications)
+                .set({ readAt: now })
+                .where(eq(notifications.id, notificationId));
+
+            return { ok: true, data: null };
+        } catch (error) {
+            return { ok: false, reason: Errors.DATABASE_ERROR };
+        }
+    },
+
+    async addRoomMember(
+        roomId: number,
+        userId: number,
+        role: string = "member"
+    ): AsyncResult<null> {
+        try {
+            const now = new Date();
+
+            await dbInstace.insert(roomMemberships).values({
+                roomId,
+                userId,
+                role,
+                joinedAt: now,
+            });
 
             return { ok: true, data: null };
         } catch (error) {

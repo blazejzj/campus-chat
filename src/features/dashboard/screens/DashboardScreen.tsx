@@ -6,6 +6,7 @@ import RoomsSidebar from "@/features/groups/components/RoomSidebar";
 import GlobalChatScreen from "@/features/globalChat/screens/GlobalChatScreen";
 import type { GlobalChatMessage } from "@/features/globalChat/hooks/useGlobalChat";
 import { links } from "@/app/links";
+import RoomInviteNotificationsBell from "@/features/notifications/components/RoomInviteNotificationsBell";
 
 type DashboardScreenProps = {
     initialGlobalMessages: GlobalChatMessage[];
@@ -144,17 +145,13 @@ export default function DashboardScreen({
                         </div>
                     </div>
 
-                    <div className="hidden sm:flex items-center space-x-3 text-xs text-gray-500">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-2 py-1 border border-green-100">
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-2 py-1 border border-green-100">
                             <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
                             Online
                         </span>
-                        <span className="border-l border-gray-200 pl-3">
-                            Logged in as{" "}
-                            <span className="font-medium text-gray-800">
-                                {userName}
-                            </span>
-                        </span>
+
+                        <RoomInviteNotificationsBell />
                     </div>
                 </header>
 
