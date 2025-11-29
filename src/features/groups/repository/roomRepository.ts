@@ -49,7 +49,7 @@ export const createRoomRepository = (dbInstace: typeof db) => ({
                 .insert(rooms)
                 .values({
                     name: data.name,
-                    visibility: data.visibility ?? "public",
+                    visibility: "private", // this could potentially be removed, we keep this field incase we want additioanl functionality
                     createdBy: data.createdBy,
                     createdAt: now,
                     slug,

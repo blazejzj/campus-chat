@@ -48,9 +48,6 @@ export default function RoomsSidebar({
     const [rooms, setRooms] = useState<Room[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newRoomName, setNewRoomName] = useState("");
-    const [newRoomVisibility, setNewRoomVisibility] = useState<
-        "public" | "private"
-    >("public");
 
     const loadRooms = async () => {
         if (!user) return;
@@ -81,7 +78,6 @@ export default function RoomsSidebar({
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     name: newRoomName.trim(),
-                    visibility: newRoomVisibility,
                 }),
             });
 
@@ -101,7 +97,6 @@ export default function RoomsSidebar({
             setRooms((prev) => [data as Room, ...prev]);
             setIsModalOpen(false);
             setNewRoomName("");
-            setNewRoomVisibility("public");
             setError("");
         } catch (err: any) {
             console.error("Error creating room:", err);
@@ -127,7 +122,6 @@ export default function RoomsSidebar({
     const handleCancelCreation = () => {
         setIsModalOpen(false);
         setNewRoomName("");
-        setNewRoomVisibility("public");
         setError("");
     };
 
@@ -152,7 +146,7 @@ export default function RoomsSidebar({
                         Create new room
                     </h2>
                     <p className="text-xs text-gray-500 mb-4">
-                        Give your room a clear name and choose visibility.
+                        Give your room a clear name.
                     </p>
                     <label className="block text-sm font-medium theme-text-color mb-1">
                         Name
@@ -172,27 +166,7 @@ export default function RoomsSidebar({
                             className="w-full p-3 border border-gray-300 bg-gray-50 text-gray-900 rounded-lg mb-4 focus:ring-2 focus:ring-(--primary-color) focus:border-transparent text-sm"
                             required
                         />
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium theme-text-color mb-1">
-                                Visibility
-                            </label>
-                            <select
-                                value={newRoomVisibility}
-                                onChange={(e) =>
-                                    setNewRoomVisibility(
-                                        e.target.value as "public" | "private"
-                                    )
-                                }
-                                className="w-full p-3 border border-gray-300 bg-gray-50 text-gray-900 rounded-lg focus:ring-2 focus:ring-(--primary-color) focus:border-transparent text-sm"
-                            >
-                                <option value="public">
-                                    Public (everyone can see)
-                                </option>
-                                <option value="private">
-                                    Private (only invited)
-                                </option>
-                            </select>
-                        </div>
+
                         <div className="flex justify-end space-x-3 text-sm">
                             <button
                                 type="button"
@@ -221,7 +195,6 @@ export default function RoomsSidebar({
         isModalOpen,
         creationError,
         newRoomName,
-        newRoomVisibility,
         handleCreateRoom,
         handleCancelCreation,
     ]);

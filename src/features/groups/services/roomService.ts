@@ -46,7 +46,7 @@ export const createRoomService = (repo: typeof roomRepository) => ({
         const room: RoomResponse = {
             id: roomId.toString(),
             name: input.name,
-            visibility: input.visibility,
+            visibility: "private", // again like in room repositroy look at the comment
             createdBy: creatorExternalId.toString(),
         };
 
