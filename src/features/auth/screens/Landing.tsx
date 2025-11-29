@@ -1,13 +1,15 @@
 "use client";
 import { useAuth } from "@/app/hooks/useAuth";
+import { links } from "@/app/links";
 import { useEffect } from "react";
+import { navigate } from "rwsdk/client";
 
 export default function Landing() {
     const { user } = useAuth();
 
     useEffect(() => {
         if (user) {
-            window.location.href = "/dashboard";
+            navigate(links.pages.dashboard);
         }
     }, [user]);
 

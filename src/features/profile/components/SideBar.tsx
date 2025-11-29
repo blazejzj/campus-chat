@@ -1,4 +1,5 @@
 import { links } from "@/app/links";
+import { navigate } from "rwsdk/client";
 
 export default function SideBar() {
     return (
@@ -22,13 +23,14 @@ export default function SideBar() {
                 </ul>
             </nav>
             <div className="p-3 bg-linear-to-br from-gray-50 via-slate-50">
-                <a
-                    href={links.pages.dashboard}
-                    className="w-full inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium rounded-full border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition"
+                <button
+                    type="button"
+                    onClick={() => navigate(links.pages.dashboard)}
+                    className="w-full inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium rounded-full border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition cursor-pointer"
                 >
                     <span aria-hidden>←</span>
                     <span>Back to dashboard</span>
-                </a>
+                </button>
             </div>
         </aside>
     );

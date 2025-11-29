@@ -6,6 +6,7 @@ import AuthCard from "../components/AuthCard";
 import FormField from "../../../app/components/FormField";
 import PrimaryButton from "../../../app/components/PrimaryButton";
 import { links } from "@/app/links";
+import { navigate } from "rwsdk/client";
 
 export default function Register() {
     const { request, loading, error, setError } = useFetch();
@@ -48,9 +49,7 @@ export default function Register() {
                 body,
             });
 
-            // using window.location here
-            // also, should we just log users in here immediately or just redirect them?
-            window.location.href = links.pages.dashboard;
+            navigate(links.pages.dashboard);
         } catch {
             // keep it simple: error is already set by the hook
         }

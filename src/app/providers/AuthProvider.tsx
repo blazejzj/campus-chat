@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useState } from "react";
+import { createContext, Dispatch, SetStateAction, useState } from "react";
 import { User as CoreUser } from "../../../types/User";
 import { useFetch } from "../hooks/useFetch";
 
@@ -10,6 +10,7 @@ type AuthContextType = {
     user: AuthUser;
     login: (user: CoreUser) => void;
     logout: () => void;
+    updateUser: (patch: Partial<CoreUser>) => void;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -45,8 +46,12 @@ export function AuthProvider({
         location.replace("/login");
     };
 
+    const updateUser = (patch: Partial<CoreUser>) => {
+        setUser((prev) => (prev ? { ...prev, ...patch } : prev));
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, logout }}>
+        <AuthContext.Provider value={{ user, login, logout, updateUser }}>
             {children}
         </AuthContext.Provider>
     );

@@ -7,6 +7,7 @@ import AuthCard from "../components/AuthCard";
 import FormField from "../../../app/components/FormField";
 import PrimaryButton from "../../../app/components/PrimaryButton";
 import { links } from "@/app/links";
+import { navigate } from "rwsdk/client";
 
 type LoginResponse = {
     // token: string;
@@ -36,7 +37,7 @@ export default function Login() {
             });
 
             login(data.user);
-            location.replace(links.pages.dashboard);
+            navigate(links.pages.dashboard);
         } catch {
             // keep it simple here i think, the error is already set by the hook
         }

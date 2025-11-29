@@ -48,7 +48,7 @@ function SettingsSection({ title, subtitle, children }: SettingsSectionProps) {
 }
 
 export default function Profile() {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const { request, loading } = useFetch();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -105,6 +105,10 @@ export default function Profile() {
                 setStatus(data.status || "");
                 setAvatarUrl(data.avatarUrl || "");
                 setNotificationsEnabled(data.notificationsEnabled ?? true);
+                updateUser({
+                    email: data.email,
+                    displayName: data.displayName,
+                });
             } catch (error) {
                 console.error("Failed to load profile:", error);
                 toast.error("Failed to load profile");
@@ -135,6 +139,7 @@ export default function Profile() {
 
             if (updated.displayName !== undefined) {
                 setDisplayName(updated.displayName);
+                updateUser({ displayName: updated.displayName });
             }
             if (updated.status !== undefined) {
                 setStatus(updated.status);
@@ -182,6 +187,7 @@ export default function Profile() {
             if (updated.email !== undefined) {
                 setEmail(updated.email);
                 setNewEmail(updated.email);
+                updateUser({ email: updated.email });
             }
 
             setEmailPassword("");

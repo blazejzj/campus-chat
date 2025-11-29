@@ -7,6 +7,7 @@ import GlobalChatScreen from "@/features/globalChat/screens/GlobalChatScreen";
 import type { GlobalChatMessage } from "@/features/globalChat/hooks/useGlobalChat";
 import { links } from "@/app/links";
 import RoomInviteNotificationsBell from "@/features/notifications/components/RoomInviteNotificationsBell";
+import { navigate } from "rwsdk/client";
 
 type DashboardScreenProps = {
     initialGlobalMessages: GlobalChatMessage[];
@@ -42,8 +43,11 @@ export default function DashboardScreen({
         );
     }
 
-    const userName = user.email.split("@")[0];
-    const userInitial = userName.charAt(0).toUpperCase();
+    const userDisplayName = user.displayName || null;
+    const userName = userDisplayName || user.email.split("@")[0];
+
+    const userInitial =
+        (userDisplayName || user.email)[0]?.toUpperCase() || "U";
 
     const handleSelectRoom = (roomId: string | number) => {
         setSelectedRoomId(roomId);
@@ -96,7 +100,7 @@ export default function DashboardScreen({
                             </div>
                             <div className="min-w-0">
                                 <p className="text-sm font-medium text-gray-900 truncate">
-                                    {userName}
+                                    {userDisplayName || userName}
                                 </p>
                                 <p className="text-[11px] text-gray-500 truncate">
                                     {user.email}
@@ -104,12 +108,13 @@ export default function DashboardScreen({
                             </div>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <a
-                                href={links.pages.profile}
-                                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-[11px] font-medium theme-text-color hover:bg-gray-50 transition text-center"
+                            <button
+                                type="button"
+                                onClick={() => navigate(links.pages.profile)}
+                                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-[11px] font-medium theme-text-color hover:bg-gray-50 transition text-center cursor-pointer"
                             >
                                 Profile
-                            </a>
+                            </button>
                             <button
                                 onClick={logout}
                                 className="px-3 py-1.5 rounded-lg bg-red-500 text-[11px] font-semibold text-white hover:bg-red-600 transition shadow-sm text-center cursor-pointer"
