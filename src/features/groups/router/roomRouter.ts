@@ -1,9 +1,15 @@
-// import { route } from "rwsdk/router";
-// import { roomController } from "../controllers/roomController";
+import { route } from "rwsdk/router";
+import roomController from "../controllers/roomController";
 
-// const ApiBase = "/groups";
+type AppRoute = ReturnType<typeof route>;
 
-export const roomRoutes = [
-    // route(ApiBase, roomController.getRooms),
-    // route(ApiBase + "/create", roomController.createRoom),
+export const createRoomRoutes = (
+    controller: typeof roomController
+): AppRoute[] => [
+    route("/groups", controller.getRooms),
+    route("/groups/create", controller.createRoom),
 ];
+
+export const roomRoutes = createRoomRoutes(roomController);
+
+export default roomRoutes;

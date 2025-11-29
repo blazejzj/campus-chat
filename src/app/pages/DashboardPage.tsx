@@ -1,4 +1,4 @@
-import DashboardShell from "./DashboardShell";
+import DashboardScreen from "@/features/dashboard/screens/DashboardScreen";
 import globalChatService from "@/features/globalChat/services/globalChatService";
 import type { GlobalChatMessage } from "@/features/globalChat/hooks/useGlobalChat";
 
@@ -18,5 +18,5 @@ export default async function DashboardPage() {
         }));
     }
 
-    return <DashboardShell initialMessages={initialMessages} />;
+    return <DashboardScreen initialGlobalMessages={initialMessages} />;
 }

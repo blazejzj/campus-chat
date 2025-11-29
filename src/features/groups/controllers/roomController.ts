@@ -1,95 +1,105 @@
-// import { json } from "@/app/utils/responseJson";
-// import type { RequestInfo } from "rwsdk/worker";
-// import roomService from "../services/roomService";
-// import { RoomCreateDto } from "../dto";
+import { RequestInfo } from "rwsdk/worker";
+import roomService from "../services/roomService";
+import { errorResponse, methodNotAllowed } from "@/app/utils/errorHandler";
+import { User } from "../../../../types/User";
+import { Errors } from "@/app/types/errors";
+import { jsonResult } from "@/app/utils/responseJson";
+import { RoomCreateDto } from "../dto";
 
-// type User = {
-//     id: string | number;
-//     email: string;
-// };
+export const createRoomController = (service: typeof roomService) => ({
+    async getRooms(ctx: RequestInfo): Promise<Response> {
+        const method = ctx.request.method.toUpperCase();
 
-// function getUserIdFromContext(ctx: RequestInfo): string | null {
+        if (method !== "GET") return methodNotAllowed(["GET"]);
 
-//     const user = (ctx as any).user;
-//     const userNested = (ctx as any).ctx?.user;
-//     const finalUser = userNested && userNested.id ? userNested : user;
+        const user = ctx.ctx.user as User | null;
+        if (!user) {
+            return errorResponse(
+                Errors.UNAUTHORIZED,
+                "User must be authenticated"
+            );
+        }
 
-//     // debuggss LOG
-//     if (finalUser && finalUser.id) {
-//         console.log(`[ROOM-DIAG] Final User ID Extracted: ${finalUser.id}.`);
-//         return String(finalUser.id);
-//     }
+        const result = await service.getRoomsForUser(user.id);
 
-//     // If we reach here, context was lost.
-//     console.error("[ROOM-DIAG] Context lost: Could not find user ID on ctx or ctx.ctx.");
-//     return null;
-// }
+        if (!result.ok) {
+            if (result.reason === Errors.UNAUTHORIZED) {
+                return errorResponse(
+                    Errors.UNAUTHORIZED,
+                    "User must be authenticated"
+                );
+            }
 
-// export const roomController = {
-//     async getRooms(ctx: RequestInfo): Promise<Response> {
-//         if (ctx.request.method.toUpperCase() !== "GET") {
-//             return json({ error: "Method Not Allowed" }, 405, { Allow: "GET" });
-//         }
+            if (result.reason === Errors.DATABASE_ERROR) {
+                return errorResponse(
+                    Errors.UNAUTHORIZED,
+                    "Database error while fetching rooms"
+                );
+            }
 
-//         const userId = getUserIdFromContext(ctx);
+            if (result.reason === Errors.INTERNAL_SERVER_ERROR) {
+                return errorResponse(
+                    Errors.UNAUTHORIZED,
+                    "Failed to fetch rooms"
+                );
+            }
+        }
+        return jsonResult(result, 200);
+    },
 
-//         if (!userId) {
-//             console.error("[ROOM-DIAG] FAILED to retrieve userId, though auth passed. Returning 401.");
-//             return json({ error: "Unauthorized" }, 401);
-//         }
+    async createRoom(ctx: RequestInfo): Promise<Response> {
+        const method = ctx.request.method.toUpperCase();
 
-//         try {
-//             console.log(`[ROOM-DIAG] Attempting to fetch rooms for User ID: ${userId}`);
-//             const rooms = await roomService.getRoomsForUser(userId);
-//             console.log(`[ROOM-DIAG] Successfully retrieved ${rooms.length} rooms. Status 200.`);
-//             return json(rooms, 200);
-//         } catch (error: any) {
-//             console.error("[ROOM-CRASH] Critical Error in roomService.getRoomsForUser:", error);
-//             return json({ error: "Internal Server Error" }, 500);
-//         }
-//     },
+        if (method !== "POST") return methodNotAllowed(["POST"]);
 
-//     async createRoom(ctx: RequestInfo): Promise<Response> {
-//         if (ctx.request.method.toUpperCase() !== "POST") {
-//             return json({ error: "Method Not Allowed" }, 405, { Allow: "POST" });
-//         }
+        const user = ctx.ctx.user as User | null;
+        if (!user) {
+            return errorResponse(
+                Errors.UNAUTHORIZED,
+                "User must be authenticated"
+            );
+        }
 
-//         const userId = getUserIdFromContext(ctx);
-//         if (!userId) return json({ error: "Unauthorized" }, 401);
+        let body;
+        try {
+            body = await ctx.request.json();
+        } catch {
+            return errorResponse(Errors.VALIDATION_ERROR, "Invalid JSON Body");
+        }
 
-//         let body;
-//         try {
-//             body = await ctx.request.json();
-//         } catch {
-//             return json({ error: "Invalid JSON body" }, 400);
-//         }
+        const parsed = RoomCreateDto.safeParse(body);
 
-//         const parsed = RoomCreateDto.safeParse(body);
-//         if (!parsed.success) {
-//             return json(
-//                 { error: "ValidationError", details: parsed.error.format() },
-//                 400
-//             );
-//         }
+        // probably overreduntant but hm
+        if (!parsed.success) {
+            return errorResponse(
+                Errors.VALIDATION_ERROR,
+                "Invalid request body"
+            );
+        }
 
-//         try {
-//             const result = await roomService.createRoom(parsed.data, userId);
+        const serviceResult = await service.createRoom(parsed.data, user.id);
 
-//             if (!result.ok) {
-//                 return json(
-//                     {
-//                         error:
-//                             result.reason === "DATABASE_ERROR"
-//                                 ? "Database operation failed"
-//                                 : "Room creation failed",
-//                     },
-//                     500
-//                 );
-//             }
-//             return json(result.room, 201);
-//         } catch (error: any) {
-//             console.error("Unexpected error creating room:", error);
-//             return json({ error: "Internal Server Error" }, 500);
-//         }
-//     },
-// };
+        if (!serviceResult.ok) {
+            if (serviceResult.reason === Errors.DATABASE_ERROR) {
+                Errors.DATABASE_ERROR, "Database error whiel creating room";
+            }
+
+            if (serviceResult.reason === Errors.ROOM_CREATION_FAILED) {
+                return errorResponse(
+                    Errors.INTERNAL_SERVER_ERROR,
+                    "Room creation failed"
+                );
+            }
+
+            return errorResponse(
+                Errors.INTERNAL_SERVER_ERROR,
+                "Room creation failed"
+            );
+        }
+        return jsonResult({ ok: true as const, data: serviceResult.room }, 201);
+    },
+});
+
+export const roomController = createRoomController(roomService);
+
+export default roomController;

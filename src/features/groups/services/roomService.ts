@@ -1,108 +1,150 @@
-// import roomRepository from "../repository/roomRepository";
-// import { RoomCreateInput } from "../dto";
-// import { CreateRoomResult, RoomResponse, RoomFromRepo } from "../types/types";
+import { messages } from "@/server/db/schema";
+import { Errors } from "@/app/types/errors";
+import { RoomCreateInput } from "../dto";
+import roomRepository from "../repository/roomRepository";
+import { CreateRoomResult, RoomFromRepo, RoomResponse } from "../types/types";
+import { AsyncResult } from "@/app/types/result";
 
-// async function getInternalIdFromExternalId(externalId: string): Promise<string> {
-//     if (!externalId) {
-//         throw new Error("USER_NOT_FOUND");
-//     }
-//     return externalId;
-// }
+export type Message = typeof messages.$inferSelect;
 
-// function mapVisibility(value: string | null): "public" | "private" | undefined {
-//   if (value === "public" || value === "private") return value as "public" | "private";
-//   return undefined;
-// }
+// TODO: Move those 2 utils probably later to utils dir
+const mapVisibility = (
+    value: string | null
+): "public" | "private" | undefined => {
+    if (value === "public" || value === "private") return value;
+    return undefined;
+};
 
-// export const roomService = {
-//   async createRoom(
-//     input: RoomCreateInput,
-//     creatorExternalId: string
-//   ): Promise<CreateRoomResult & { room?: RoomResponse }> {
-//     try {
-//       if (!roomRepository || typeof roomRepository.createRoom !== 'function') {
-//         console.error("CRITICAL ERROR: roomRepository is missing or its methods are not exported.");
-//         throw new Error("Repository initialization failed.");
-//       }
+// safe numeric converter, probably unnecessaraily "safe"
+const toNumericId = (id: string | number): number | null => {
+    if (typeof id === "number") return id;
+    const parsed = Number.parseInt(id, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+};
 
-//       const creatorInternalId = await getInternalIdFromExternalId(creatorExternalId);
+export const createRoomService = (repo: typeof roomRepository) => ({
+    async createRoom(
+        input: RoomCreateInput,
+        creatorExternalId: string | number
+    ): Promise<CreateRoomResult & { room?: RoomResponse }> {
+        const creatorInternalId = toNumericId(creatorExternalId);
 
-//       const roomId = await roomRepository.createRoom({
-//         name: input.name,
-//         visibility: input.visibility,
-//         createdBy: creatorInternalId,
-//       });
+        if (creatorInternalId === null)
+            return { ok: false, reason: Errors.ROOM_CREATION_FAILED };
 
-//       if (!roomId) {
-//         return { ok: false, reason: "ROOM_CREATION_FAILED" };
-//       }
+        const repoResult = await repo.createRoom({
+            ...input,
+            createdBy: creatorInternalId,
+        });
 
-//       const room: RoomResponse = {
-//         id: roomId.toString(),
-//         name: input.name,
-//         visibility: input.visibility,
-//         createdBy: creatorExternalId,
-//       };
+        if (!repoResult.ok) {
+            return { ok: false, reason: Errors.DATABASE_ERROR };
+        }
 
-//       return { ok: true, id: room.id, room };
+        const roomId = repoResult.data;
 
-//     } catch (error: any) {
-//       console.error("Room service creation error:", error);
-//       throw error;
-//     }
-//   },
+        const room: RoomResponse = {
+            id: roomId.toString(),
+            name: input.name,
+            visibility: input.visibility,
+            createdBy: creatorExternalId.toString(),
+        };
 
-//   async getRoomsForUser(externalUserId: string): Promise<RoomResponse[]> {
-//   try {
-//     if (!roomRepository || typeof roomRepository.findRoomsByUserId !== 'function') {
-//       console.error("CRITICAL ERROR: roomRepository is missing or its findRoomsByUserId method is not exported.");
-//       throw new Error("Repository initialization failed.");
-//     }
+        return {
+            ok: true,
+            id: room.id,
+            room,
+        };
+    },
 
-//     const internalUserId = await getInternalIdFromExternalId(externalUserId);
+    async getRoomsForUser(
+        externalUserId: string | number
+    ): AsyncResult<RoomResponse[]> {
+        const internalUserId = toNumericId(externalUserId);
 
-//     const rooms = (await roomRepository.findRoomsByUserId(internalUserId)) as RoomFromRepo[];
+        if (internalUserId === null) {
+            return { ok: false, reason: Errors.UNAUTHORIZED };
+        }
 
-//     return rooms.map((room: RoomFromRepo) => ({
-//       id: room.id.toString(),
-//       name: room.name,
-//       visibility: mapVisibility(room.visibility),
-//       createdBy: room.createdBy ? room.createdBy.toString() : externalUserId,
-//     }));
-//   } catch (error: any) {
-//     console.error("Room service getRoomsForUser CRASHED with error:", error.message || error);
-//     throw error;
-//   }
-// },
+        const repoResult = await repo.findRoomsByUserId(internalUserId);
 
-//   async getRoomIfAuthorized(roomId: string, externalUserId: string): Promise<RoomResponse | null> {
-//   try {
-//     const internalUserId = await getInternalIdFromExternalId(externalUserId);
+        if (!repoResult.ok) {
+            return { ok: false, reason: repoResult.reason };
+        }
 
-//     const room = await roomRepository.findRoomIfAuthorized(roomId, internalUserId) as RoomFromRepo | null;
+        const roomsFromRepo = repoResult.data as RoomFromRepo[];
 
-//     if (!room) return null;
+        const mapped: RoomResponse[] = roomsFromRepo.map((room) => ({
+            id: room.id.toString(),
+            name: room.name,
+            visibility: mapVisibility(room.visibility),
+            createdBy: room.createdBy?.toString() ?? null,
+        }));
 
-//     return {
-//       id: room.id.toString(),
-//       name: room.name,
-//       visibility: mapVisibility(room.visibility),
-//       createdBy: room.createdBy ? room.createdBy.toString() : externalUserId,
-//     };
-//   } catch (error: any) {
-//     console.error("Room service getRoomIfAuthorized error:", error);
-//     throw error;
-//   }
-// },
+        return { ok: true, data: mapped };
+    },
 
-//   async getPaginatedMessages(roomId: string, limit: number, offset: number) {
-//     try {
-//       return await roomRepository.getPaginatedMessages(roomId, limit, offset);
-//     } catch (error: any) {
-//       console.error("Error in getPaginatedMessages:", error);
-//       throw new Error("DATABASE_ERROR");
-//     }
-//   }
-// };
+    async getRoomIfAuthorized(
+        roomId: string | number,
+        externalUserId: string | number
+    ): AsyncResult<RoomResponse | null> {
+        const internalRoomId = toNumericId(roomId);
+        const internalUserId = toNumericId(externalUserId);
 
-// export default roomService;
+        if (internalRoomId === null || internalUserId === null) {
+            return { ok: false, reason: Errors.UNAUTHORIZED };
+        }
+
+        const repoResult = await repo.findRoomIfAuthorized(
+            internalRoomId,
+            internalUserId
+        );
+        if (!repoResult.ok) {
+            return { ok: false, reason: repoResult.reason };
+        }
+
+        const room = repoResult.data as RoomFromRepo | null;
+
+        if (!room) {
+            // note we return true here, for me this seems the most logical thing to do?
+            return { ok: true, data: null };
+        }
+
+        const mapped: RoomResponse = {
+            id: room.id.toString(),
+            name: room.name,
+            visibility: mapVisibility(room.visibility),
+            createdBy: room.createdBy?.toString() ?? null,
+        };
+
+        return { ok: true, data: mapped };
+    },
+
+    async getPaginatedMessages(
+        roomId: string | number,
+        limit: number,
+        offset: number
+    ): AsyncResult<Message[]> {
+        const internalRoomId = toNumericId(roomId);
+
+        if (internalRoomId === null) {
+            return { ok: false, reason: Errors.VALIDATION_ERROR };
+        }
+
+        const repoResult = await repo.getPaginatedMessages(
+            internalRoomId,
+            limit,
+            offset
+        );
+
+        if (!repoResult.ok) {
+            return { ok: false, reason: repoResult.reason };
+        }
+
+        return { ok: true, data: repoResult.data };
+    },
+});
+
+export const roomService = createRoomService(roomRepository);
+
+export default roomService;

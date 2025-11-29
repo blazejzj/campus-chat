@@ -1,3 +1,5 @@
+import { links } from "@/app/links";
+
 export default function SideBar() {
     return (
         <aside className="w-64 border-r p-4">
@@ -19,6 +21,15 @@ export default function SideBar() {
                     <li>Security</li>
                 </ul>
             </nav>
+            <div className="p-3 bg-linear-to-br from-gray-50 via-slate-50">
+                <a
+                    href={links.pages.dashboard}
+                    className="w-full inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium rounded-full border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition"
+                >
+                    <span aria-hidden>←</span>
+                    <span>Back to dashboard</span>
+                </a>
+            </div>
         </aside>
     );
 }
