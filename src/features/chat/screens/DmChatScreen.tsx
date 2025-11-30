@@ -3,6 +3,8 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import useDmChat, { DmChatMessage } from "../hooks/useDmChat";
 import { useAuth } from "@/app/hooks/useAuth";
+import { useFetch } from "@/app/hooks/useFetch";
+import { links } from "@/app/links";
 
 /*
   simple dm ui, same card style as room/global aw yes
@@ -27,8 +29,11 @@ export default function DmChatScreen({
     const { messages, loading, sending, error, sendMessage, reload } =
         useDmChat(friendId, initialMessages);
 
+    const { request } = useFetch();
     const [body, setBody] = useState("");
     const bottomRef = useRef<HTMLDivElement | null>(null);
+    const [removeError, setRemoveError] = useState<string | null>(null);
+    const [removing, setRemoving] = useState(false);
 
     // reload when friend changes or realtime bumps up stuff
     useEffect(() => {
@@ -45,25 +50,66 @@ export default function DmChatScreen({
         });
     }, [messages.length]);
 
-    async function handleSubmit(e: FormEvent) {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (!body.trim()) return;
 
         await sendMessage(body);
         setBody("");
-    }
+    };
+
+    const handleRemoveFriend = async () => {
+        if (removing) return;
+
+        setRemoveError(null);
+        try {
+            setRemoving(true);
+            await request(links.api.friends.friends + "?friendId=" + friendId, {
+                method: "DELETE",
+                credentials: "include",
+            });
+
+            // for now we just refresh, potentially could update somehow else
+            window.location.reload();
+        } catch (err: any) {
+            setRemoveError(
+                err?.message || "Failed to remove friend. Try again please"
+            );
+        } finally {
+            setRemoving(false);
+        }
+    };
 
     return (
         <section className="flex h-full flex-col">
             <header className="border-b border-gray-100 px-4 py-3 bg-white/90">
-                <h2 className="text-sm font-semibold theme-text-color">
-                    Direct messages
-                </h2>
-                <p className="text-[11px] text-gray-500">
-                    Private chat between you and your friend.
-                </p>
+                <div>
+                    <h2 className="text-sm font-semibold theme-text-color">
+                        Direct messages
+                    </h2>
+                    <p className="text-[11px] text-gray-500">
+                        Private chat between you and your friend.
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    onClick={handleRemoveFriend}
+                    disabled={removing}
+                    className={`cursor-pointer rounded-full border px-3 py-1.5 text-[11px] font-semibold shadow-sm transition ${
+                        removing
+                            ? "border-red-300 bg-red-100 text-red-400 cursor-not-allowed"
+                            : "border-red-200 bg-white text-red-600 hover:bg-red-50"
+                    }`}
+                >
+                    {removing ? "Removing…" : "Remove friend"}
+                </button>
             </header>
 
+            {removeError && (
+                <div className="border-b border-red-100 bg-red-50 px-4 py-2 text-[11px] text-red-700">
+                    {removeError}
+                </div>
+            )}
             <main className="flex-1 overflow-y-auto px-4 py-4 space-y-2 bg-gray-50/60">
                 {loading && (
                     <p className="text-sm text-gray-500">Loading messages...</p>
@@ -145,7 +191,7 @@ export default function DmChatScreen({
                     className="rounded-full theme-bg-color px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition shadow-sm cursor-pointer"
                     disabled={!body.trim() || sending}
                 >
-                    {sending ? "Sending…" : "Send"}
+                    {sending ? "Sending..." : "Send"}
                 </button>
             </form>
         </section>
