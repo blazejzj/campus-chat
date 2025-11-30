@@ -116,10 +116,6 @@ export default function RoomDetailsPanel({
 
     return (
         <div className="mt-1 mx-2 mb-3 p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-800">
-            <h5 className="text-[11px] font-semibold text-gray-500 mb-2">
-                Room ID: {roomId}
-            </h5>
-
             <div className="flex justify-between items-center mb-2">
                 <h4 className="text-xs font-semibold theme-text-color">
                     Members ({members.length}
@@ -151,56 +147,59 @@ export default function RoomDetailsPanel({
                 ))}
             </ul>
 
-            <form onSubmit={handleInvite} className="mb-3">
-                <label className="block text-[11px] font-semibold text-gray-600 mb-1">
-                    Invite by email
-                </label>
-                <div className="flex gap-2">
-                    <input
-                        type="email"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        placeholder="student@example.com"
-                        className="flex-1 px-2 py-1.5 rounded-lg border border-gray-300 bg-white text-[11px] focus:outline-none focus:ring-1 focus:ring-(--primary-color)"
-                    />
+            {canDelete && (
+                <>
+                    <form onSubmit={handleInvite} className="mb-3">
+                        <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                            Invite by email
+                        </label>
+                        <div className="flex gap-2">
+                            <input
+                                type="email"
+                                value={inviteEmail}
+                                onChange={(e) => setInviteEmail(e.target.value)}
+                                placeholder="student@example.com"
+                                className="flex-1 px-2 py-1.5 rounded-lg border border-gray-300 bg-white text-[11px] focus:outline-none focus:ring-1 focus:ring-(--primary-color)"
+                            />
+                            <button
+                                type="submit"
+                                disabled={
+                                    !inviteEmail.trim() || inviting || loading
+                                }
+                                className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold shadow-sm cursor-pointer ${
+                                    !inviteEmail.trim() || inviting || loading
+                                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                        : "bg-gray-900 text-white hover:bg-gray-800"
+                                }`}
+                            >
+                                {inviting ? "Sending..." : "Invite"}
+                            </button>
+                        </div>
+                    </form>
+
+                    {inviteMessage && (
+                        <p className="text-[11px] text-green-600 mb-1">
+                            {inviteMessage}
+                        </p>
+                    )}
+
+                    {error && (
+                        <p className="text-[11px] text-red-600 mb-2 font-medium">
+                            {error}
+                        </p>
+                    )}
                     <button
-                        type="submit"
-                        disabled={!inviteEmail.trim() || inviting || loading}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold shadow-sm cursor-pointer ${
-                            !inviteEmail.trim() || inviting || loading
-                                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                : "bg-gray-900 text-white hover:bg-gray-800"
+                        onClick={handleDelete}
+                        disabled={deleting || loading}
+                        className={`w-full px-2 py-1 rounded-lg transition shadow-sm text-[11px] font-semibold ${
+                            deleting || loading
+                                ? "bg-red-300 cursor-not-allowed text-white"
+                                : "bg-red-500 hover:bg-red-600 text-white cursor-pointer"
                         }`}
                     >
-                        {inviting ? "Sending..." : "Invite"}
+                        {deleting || loading ? "Deleting..." : "Delete Room"}
                     </button>
-                </div>
-            </form>
-
-            {inviteMessage && (
-                <p className="text-[11px] text-green-600 mb-1">
-                    {inviteMessage}
-                </p>
-            )}
-
-            {error && (
-                <p className="text-[11px] text-red-600 mb-2 font-medium">
-                    {error}
-                </p>
-            )}
-
-            {canDelete && (
-                <button
-                    onClick={handleDelete}
-                    disabled={deleting || loading}
-                    className={`w-full px-2 py-1 rounded-lg transition shadow-sm text-[11px] font-semibold ${
-                        deleting || loading
-                            ? "bg-red-300 cursor-not-allowed text-white"
-                            : "bg-red-500 hover:bg-red-600 text-white cursor-pointer"
-                    }`}
-                >
-                    {deleting || loading ? "Deleting..." : "Delete Room"}
-                </button>
+                </>
             )}
         </div>
     );

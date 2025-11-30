@@ -1,29 +1,46 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import useGlobalChat, { GlobalChatMessage } from "../hooks/useGlobalChat";
+import useDmChat, { DmChatMessage } from "../hooks/useDmChat";
 import { useAuth } from "@/app/hooks/useAuth";
 
-type GlobalChatScreenProps = {
-    initialMessages?: GlobalChatMessage[];
+/*
+  simple dm ui, same card style as room/global aw yes
+*/
+
+type Props = {
+    friendId: number;
+    realtimeVersion?: number;
+    friendLabel?: string;
+    initialMessages?: DmChatMessage[];
 };
 
-export function GlobalChatScreen({
+export default function DmChatScreen({
+    friendId,
+    realtimeVersion,
+    friendLabel = "Friend",
     initialMessages = [],
-}: GlobalChatScreenProps) {
+}: Props) {
     const { user } = useAuth();
-    const { messages, loading, sending, error, sendMessage } =
-        useGlobalChat(initialMessages);
-    const [body, setBody] = useState("");
+    const currentUserId = user?.id ?? null;
 
-    // poor mans attempt to always focus on newest message in globalchat
+    const { messages, loading, sending, error, sendMessage, reload } =
+        useDmChat(friendId, initialMessages);
+
+    const [body, setBody] = useState("");
     const bottomRef = useRef<HTMLDivElement | null>(null);
 
+    // reload when friend changes or realtime bumps up stuff
+    useEffect(() => {
+        reload();
+    }, [friendId, realtimeVersion]);
+
+    // scroll ton ewest msg first always!
     useEffect(() => {
         if (!bottomRef.current) return;
 
         bottomRef.current.scrollIntoView({
-            behavior: "smooth", // i refuse to blieve "behavior is grammatically correct, its behaviour, duuh."
+            behavior: "smooth",
             block: "end",
         });
     }, [messages.length]);
@@ -31,18 +48,19 @@ export function GlobalChatScreen({
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
         if (!body.trim()) return;
+
         await sendMessage(body);
         setBody("");
     }
 
     return (
-        <div className="flex h-full flex-col">
+        <section className="flex h-full flex-col">
             <header className="border-b border-gray-100 px-4 py-3 bg-white/90">
                 <h2 className="text-sm font-semibold theme-text-color">
-                    Global chat
+                    Direct messages
                 </h2>
                 <p className="text-[11px] text-gray-500">
-                    Everyone connected can write here.
+                    Private chat between you and your friend.
                 </p>
             </header>
 
@@ -55,12 +73,13 @@ export function GlobalChatScreen({
 
                 {!loading && messages.length === 0 && !error && (
                     <p className="text-sm text-gray-500">
-                        No messages yet - be the first to say hi
+                        No messages yet - say something exrtaordinary!
                     </p>
                 )}
 
                 {messages.map((m) => {
-                    const isMine = user && m.authorId === user.id;
+                    const isMine =
+                        currentUserId != null && m.authorId === currentUserId;
                     const timestamp = m.createdAt
                         ? new Date(m.createdAt).toLocaleTimeString([], {
                               hour: "2-digit",
@@ -70,11 +89,7 @@ export function GlobalChatScreen({
 
                     const displayName = isMine
                         ? "You"
-                        : m.authorDisplayName ||
-                          m.authorEmail ||
-                          (m.authorId != null
-                              ? `User #${m.authorId}`
-                              : "Unknown user");
+                        : m.authorDisplayName ?? friendLabel;
 
                     return (
                         <div
@@ -83,14 +98,14 @@ export function GlobalChatScreen({
                                 isMine ? "justify-end" : "justify-start"
                             }`}
                         >
-                            <div
+                            <article
                                 className={`max-w-xs sm:max-w-sm rounded-2xl px-3 py-2 text-sm shadow-sm border ${
                                     isMine
                                         ? "bg-green-500 text-white border-green-400"
                                         : "bg-white text-gray-900 border-gray-200"
                                 }`}
                             >
-                                <div className="flex items-center justify-between gap-2 mb-1">
+                                <header className="mb-1 flex items-center justify-between gap-2">
                                     <span className="text-xs font-semibold truncate">
                                         {displayName}
                                     </span>
@@ -103,14 +118,15 @@ export function GlobalChatScreen({
                                     >
                                         {timestamp}
                                     </span>
-                                </div>
+                                </header>
                                 <p className="text-sm whitespace-pre-wrap wrap-break-word">
                                     {m.body}
                                 </p>
-                            </div>
+                            </article>
                         </div>
                     );
                 })}
+
                 <div ref={bottomRef} />
             </main>
 
@@ -120,7 +136,7 @@ export function GlobalChatScreen({
             >
                 <input
                     className="flex-1 rounded-full border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
-                    placeholder="Write a message…"
+                    placeholder="Write a private message…"
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
                 />
@@ -132,8 +148,6 @@ export function GlobalChatScreen({
                     {sending ? "Sending…" : "Send"}
                 </button>
             </form>
-        </div>
+        </section>
     );
 }
-
-export default GlobalChatScreen;

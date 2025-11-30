@@ -1,17 +1,17 @@
-import { Errors } from "@/app/types/errors";
-import { AsyncResult } from "@/app/types/result";
 import db from "@/server/db";
-import { rooms } from "@/server/db/roomSchema";
-import { messages, profiles, users } from "@/server/db/schema";
-import { desc, eq } from "drizzle-orm";
+import {
+    messages,
+    dmThreads,
+    dmThreadParticipants,
+    users,
+    profiles,
+} from "@/server/db/schema";
+import { AsyncResult } from "@/app/types/result";
+import { Errors } from "@/app/types/errors";
+import { and, desc, eq, inArray } from "drizzle-orm";
 
-export type RoomRow = typeof rooms.$inferSelect;
-export type NewRoomRow = typeof rooms.$inferInsert;
-export type MessageRow = typeof messages.$inferSelect;
-
-export const GLOBAL_ROOM_SLUG = "global";
-
-export type GlobalMessageWithAuthorRow = {
+export type DmThreadRow = typeof dmThreads.$inferSelect;
+export type MessageRow = {
     id: number;
     roomId: number | null;
     threadId: number | null;
@@ -24,15 +24,49 @@ export type GlobalMessageWithAuthorRow = {
     authorAvatarUrl: string | null;
     authorEmail: string | null;
 };
-
-// TODO: Possibly move stuff so chat feature also can use this
-export const createGlobalChatRepository = (dbInstance: typeof db) => ({
-    async findRoomBySlug(slug: string): AsyncResult<RoomRow | null> {
+export const createDmChatRepository = (dbInstance: typeof db) => ({
+    async findThreadBetweenUsers(
+        userIdA: number,
+        userIdB: number
+    ): AsyncResult<DmThreadRow | null> {
         try {
+            const participantRows = await dbInstance
+                .select()
+                .from(dmThreadParticipants)
+                .where(
+                    inArray(dmThreadParticipants.userId, [userIdA, userIdB])
+                );
+
+            const countsByThreadId = new Map<number, number>();
+
+            for (const row of participantRows) {
+                const threadId = row.threadId;
+                if (!threadId) continue;
+
+                const currentCount = countsByThreadId.get(threadId) ?? 0;
+                countsByThreadId.set(threadId, currentCount + 1);
+            }
+
+            let threadIdWithBothUsers: number | null = null;
+
+            for (const [threadId, count] of countsByThreadId) {
+                if (count === 2) {
+                    threadIdWithBothUsers = threadId;
+                    break;
+                }
+            }
+
+            if (threadIdWithBothUsers === null) {
+                return {
+                    ok: true,
+                    data: null,
+                };
+            }
+
             const rows = await dbInstance
                 .select()
-                .from(rooms)
-                .where(eq(rooms.slug, slug));
+                .from(dmThreads)
+                .where(eq(dmThreads.id, threadIdWithBothUsers));
 
             return {
                 ok: true,
@@ -46,16 +80,34 @@ export const createGlobalChatRepository = (dbInstance: typeof db) => ({
         }
     },
 
-    async createRoom(values: NewRoomRow): AsyncResult<RoomRow> {
+    async createThreadWithUsers(
+        userIdA: number,
+        userIdB: number
+    ): AsyncResult<DmThreadRow> {
         try {
-            const res = await dbInstance
-                .insert(rooms)
-                .values(values)
+            const now = new Date();
+
+            const [thread] = await dbInstance
+                .insert(dmThreads)
+                .values({ createdAt: now })
                 .returning();
+
+            await dbInstance.insert(dmThreadParticipants).values([
+                {
+                    threadId: thread.id,
+                    userId: userIdA,
+                    joinedAt: now,
+                },
+                {
+                    threadId: thread.id,
+                    userId: userIdB,
+                    joinedAt: now,
+                },
+            ]);
 
             return {
                 ok: true,
-                data: res[0],
+                data: thread,
             };
         } catch (error) {
             return {
@@ -64,10 +116,11 @@ export const createGlobalChatRepository = (dbInstance: typeof db) => ({
             };
         }
     },
-    async listMessagesByRoomId(
-        roomId: number,
+
+    async listMessagesByThreadId(
+        threadId: number,
         limit: number
-    ): AsyncResult<GlobalMessageWithAuthorRow[]> {
+    ): AsyncResult<MessageRow[]> {
         try {
             const rows = await dbInstance
                 .select({
@@ -86,7 +139,7 @@ export const createGlobalChatRepository = (dbInstance: typeof db) => ({
                 .from(messages)
                 .leftJoin(users, eq(messages.authorId, users.id))
                 .leftJoin(profiles, eq(users.id, profiles.userId))
-                .where(eq(messages.roomId, roomId))
+                .where(eq(messages.threadId, threadId))
                 .orderBy(desc(messages.createdAt))
                 .limit(limit);
 
@@ -102,20 +155,19 @@ export const createGlobalChatRepository = (dbInstance: typeof db) => ({
         }
     },
 
-    async createMessageForRoom(
-        roomId: number,
+    async createMessageInThread(
+        threadId: number,
         authorId: number,
         body: string
-    ): AsyncResult<GlobalMessageWithAuthorRow> {
+    ): AsyncResult<MessageRow> {
         try {
             const now = new Date();
 
-            // first insert the message here
             const inserted = await dbInstance
                 .insert(messages)
                 .values({
-                    roomId,
-                    threadId: null,
+                    roomId: null,
+                    threadId,
                     authorId,
                     body,
                     createdAt: now,
@@ -134,7 +186,6 @@ export const createGlobalChatRepository = (dbInstance: typeof db) => ({
                 };
             }
 
-            // then fetch the row with author (info and everything will be joined)
             const [row] = await dbInstance
                 .select({
                     id: messages.id,
@@ -174,6 +225,5 @@ export const createGlobalChatRepository = (dbInstance: typeof db) => ({
     },
 });
 
-export const globalChatRepository = createGlobalChatRepository(db);
-
-export default globalChatRepository;
+export const dmChatRepository = createDmChatRepository(db);
+export default dmChatRepository;

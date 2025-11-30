@@ -9,15 +9,19 @@ import { links } from "@/app/links";
 import { navigate } from "rwsdk/client";
 import FriendsList from "@/features/friends/components/FriendList";
 import NotificationsBell from "@/features/notifications/components/NotificationsBell";
+import RoomChatScreen from "@/features/chat/screens/RoomChatScreen";
+import DmChatScreen from "@/features/chat/screens/DmChatScreen";
 
 type DashboardScreenProps = {
     initialGlobalMessages: GlobalChatMessage[];
+    realtimeVersion: number;
 };
 
 type ActiveChat = "global" | "room" | "friends";
 
 export default function DashboardScreen({
     initialGlobalMessages,
+    realtimeVersion,
 }: DashboardScreenProps) {
     const { user, logout } = useAuth();
     const [selectedRoomId, setSelectedRoomId] = useState<
@@ -56,7 +60,6 @@ export default function DashboardScreen({
         (userDisplayName || user.email)[0]?.toUpperCase() || "U";
 
     const handleSelectRoom = (roomId: string | number) => {
-        // toggle: klikk på samme rom = gå tilbake til global chat
         if (selectedRoomId === roomId) {
             setSelectedRoomId(null);
             setActiveChat("global");
@@ -73,8 +76,6 @@ export default function DashboardScreen({
             setActiveChat("global");
         }
     };
-
-    const showRoomChat = activeChat === "room" && selectedRoomId != null;
 
     return (
         <div className="flex h-screen bg-linear-to-br from-gray-50 via-slate-50 to-gray-100">
@@ -256,29 +257,34 @@ export default function DashboardScreen({
                             )}
 
                             {activeChat === "room" && selectedRoomId && (
-                                <div className="h-full flex items-center justify-center text-gray-500 text-sm">
-                                    Room chat for this room will live here.
-                                </div>
+                                <RoomChatScreen
+                                    roomId={Number(selectedRoomId)}
+                                    realtimeVersion={realtimeVersion}
+                                />
                             )}
 
                             {activeChat === "room" && !selectedRoomId && (
                                 <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-                                    Select a room from the sidebar to start
-                                    chatting.
+                                    <p>
+                                        Select a room from the sidebar to start
+                                        chatting.
+                                    </p>
                                 </div>
                             )}
 
                             {activeChat === "friends" && selectedFriendId && (
-                                <div className="h-full flex items-center justify-center text-gray-500 text-sm">
-                                    Direct messages with your friend will live
-                                    here.
-                                </div>
+                                <DmChatScreen
+                                    friendId={selectedFriendId}
+                                    realtimeVersion={realtimeVersion}
+                                />
                             )}
 
                             {activeChat === "friends" && !selectedFriendId && (
                                 <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-                                    Select a friend from the sidebar to start a
-                                    chat.
+                                    <p>
+                                        Select a friend from the sidebar to
+                                        start a chat.
+                                    </p>
                                 </div>
                             )}
                         </div>

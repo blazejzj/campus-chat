@@ -1,6 +1,6 @@
 import {
     GLOBAL_ROOM_SLUG,
-    MessageRow,
+    GlobalMessageWithAuthorRow,
     NewRoomRow,
     RoomRow,
 } from "../repository/globalChatRepository";
@@ -49,7 +49,7 @@ export const createGlobalChatService = (repo: typeof globalChatRepository) => ({
         };
     },
 
-    async getMessages(limit = 50): AsyncResult<MessageRow[]> {
+    async getMessages(limit = 50): AsyncResult<GlobalMessageWithAuthorRow[]> {
         const roomResult = await this.ensureGlobalRoom();
         if (!roomResult.ok) {
             return roomResult;
@@ -82,7 +82,7 @@ export const createGlobalChatService = (repo: typeof globalChatRepository) => ({
     }: {
         authorId: number;
         body: string;
-    }): AsyncResult<MessageRow> {
+    }): AsyncResult<GlobalMessageWithAuthorRow> {
         const trimmed = body.trim();
         if (!trimmed) {
             return {

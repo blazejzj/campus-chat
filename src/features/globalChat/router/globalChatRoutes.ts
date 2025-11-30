@@ -1,5 +1,5 @@
 import { route } from "rwsdk/router";
-import globalChatController from "./controllers/globalChatController";
+import globalChatController from "../controllers/globalChatController";
 
 type AppRoute = ReturnType<typeof route>;
 
