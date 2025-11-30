@@ -15,8 +15,18 @@ export default async function DashboardPage() {
             authorId: m.authorId,
             body: m.body,
             createdAt: m.createdAt ? m.createdAt.toISOString() : null,
+            authorDisplayName: (m as any).authorDisplayName ?? null,
+            authorAvatarUrl: (m as any).authorAvatarUrl ?? null,
+            authorEmail: (m as any).authorEmail ?? null,
         }));
     }
 
-    return <DashboardScreen initialGlobalMessages={initialMessages} />;
+    const realtimeVersion = Date.now();
+
+    return (
+        <DashboardScreen
+            initialGlobalMessages={initialMessages}
+            realtimeVersion={realtimeVersion}
+        />
+    );
 }

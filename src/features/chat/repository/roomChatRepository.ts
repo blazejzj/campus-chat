@@ -1,17 +1,11 @@
-import { Errors } from "@/app/types/errors";
-import { AsyncResult } from "@/app/types/result";
 import db from "@/server/db";
-import { rooms } from "@/server/db/roomSchema";
-import { messages, profiles, users } from "@/server/db/schema";
+import { messages, profiles, rooms, users } from "@/server/db/schema";
+import { AsyncResult } from "@/app/types/result";
+import { Errors } from "@/app/types/errors";
 import { desc, eq } from "drizzle-orm";
 
 export type RoomRow = typeof rooms.$inferSelect;
-export type NewRoomRow = typeof rooms.$inferInsert;
-export type MessageRow = typeof messages.$inferSelect;
-
-export const GLOBAL_ROOM_SLUG = "global";
-
-export type GlobalMessageWithAuthorRow = {
+export type MessageRow = {
     id: number;
     roomId: number | null;
     threadId: number | null;
@@ -25,14 +19,13 @@ export type GlobalMessageWithAuthorRow = {
     authorEmail: string | null;
 };
 
-// TODO: Possibly move stuff so chat feature also can use this
-export const createGlobalChatRepository = (dbInstance: typeof db) => ({
-    async findRoomBySlug(slug: string): AsyncResult<RoomRow | null> {
+export const createRoomChatRepository = (dbInstance: typeof db) => ({
+    async findRoomById(roomId: number): AsyncResult<RoomRow | null> {
         try {
             const rows = await dbInstance
                 .select()
                 .from(rooms)
-                .where(eq(rooms.slug, slug));
+                .where(eq(rooms.id, roomId));
 
             return {
                 ok: true,
@@ -45,29 +38,10 @@ export const createGlobalChatRepository = (dbInstance: typeof db) => ({
             };
         }
     },
-
-    async createRoom(values: NewRoomRow): AsyncResult<RoomRow> {
-        try {
-            const res = await dbInstance
-                .insert(rooms)
-                .values(values)
-                .returning();
-
-            return {
-                ok: true,
-                data: res[0],
-            };
-        } catch (error) {
-            return {
-                ok: false,
-                reason: Errors.DATABASE_ERROR,
-            };
-        }
-    },
     async listMessagesByRoomId(
         roomId: number,
         limit: number
-    ): AsyncResult<GlobalMessageWithAuthorRow[]> {
+    ): AsyncResult<MessageRow[]> {
         try {
             const rows = await dbInstance
                 .select({
@@ -106,11 +80,10 @@ export const createGlobalChatRepository = (dbInstance: typeof db) => ({
         roomId: number,
         authorId: number,
         body: string
-    ): AsyncResult<GlobalMessageWithAuthorRow> {
+    ): AsyncResult<MessageRow> {
         try {
             const now = new Date();
 
-            // first insert the message here
             const inserted = await dbInstance
                 .insert(messages)
                 .values({
@@ -134,7 +107,6 @@ export const createGlobalChatRepository = (dbInstance: typeof db) => ({
                 };
             }
 
-            // then fetch the row with author (info and everything will be joined)
             const [row] = await dbInstance
                 .select({
                     id: messages.id,
@@ -174,6 +146,6 @@ export const createGlobalChatRepository = (dbInstance: typeof db) => ({
     },
 });
 
-export const globalChatRepository = createGlobalChatRepository(db);
+export const roomChatRepository = createRoomChatRepository(db);
 
-export default globalChatRepository;
+export default roomChatRepository;

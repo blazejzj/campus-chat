@@ -1,51 +1,115 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import useGlobalChat, { GlobalChatMessage } from "../hooks/useGlobalChat";
+import useDmChat, { DmChatMessage } from "../hooks/useDmChat";
 import { useAuth } from "@/app/hooks/useAuth";
+import { useFetch } from "@/app/hooks/useFetch";
+import { links } from "@/app/links";
 
-type GlobalChatScreenProps = {
-    initialMessages?: GlobalChatMessage[];
+/*
+  simple dm ui, same card style as room/global aw yes
+*/
+
+type Props = {
+    friendId: number;
+    realtimeVersion?: number;
+    friendLabel?: string;
+    initialMessages?: DmChatMessage[];
 };
 
-export function GlobalChatScreen({
+export default function DmChatScreen({
+    friendId,
+    realtimeVersion,
+    friendLabel = "Friend",
     initialMessages = [],
-}: GlobalChatScreenProps) {
+}: Props) {
     const { user } = useAuth();
-    const { messages, loading, sending, error, sendMessage } =
-        useGlobalChat(initialMessages);
+    const currentUserId = user?.id ?? null;
+
+    const { messages, loading, sending, error, sendMessage, reload } =
+        useDmChat(friendId, initialMessages);
+
+    const { request } = useFetch();
     const [body, setBody] = useState("");
-
-    // poor mans attempt to always focus on newest message in globalchat
     const bottomRef = useRef<HTMLDivElement | null>(null);
+    const [removeError, setRemoveError] = useState<string | null>(null);
+    const [removing, setRemoving] = useState(false);
 
+    // reload when friend changes or realtime bumps up stuff
+    useEffect(() => {
+        reload();
+    }, [friendId, realtimeVersion]);
+
+    // scroll ton ewest msg first always!
     useEffect(() => {
         if (!bottomRef.current) return;
 
         bottomRef.current.scrollIntoView({
-            behavior: "smooth", // i refuse to blieve "behavior is grammatically correct, its behaviour, duuh."
+            behavior: "smooth",
             block: "end",
         });
     }, [messages.length]);
 
-    async function handleSubmit(e: FormEvent) {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (!body.trim()) return;
+
         await sendMessage(body);
         setBody("");
-    }
+    };
+
+    const handleRemoveFriend = async () => {
+        if (removing) return;
+
+        setRemoveError(null);
+        try {
+            setRemoving(true);
+            await request(links.api.friends.friends + "?friendId=" + friendId, {
+                method: "DELETE",
+                credentials: "include",
+            });
+
+            // for now we just refresh, potentially could update somehow else
+            window.location.reload();
+        } catch (err: any) {
+            setRemoveError(
+                err?.message || "Failed to remove friend. Try again please"
+            );
+        } finally {
+            setRemoving(false);
+        }
+    };
 
     return (
-        <div className="flex h-full flex-col">
+        <section className="flex h-full flex-col">
             <header className="border-b border-gray-100 px-4 py-3 bg-white/90">
-                <h2 className="text-sm font-semibold theme-text-color">
-                    Global chat
-                </h2>
-                <p className="text-[11px] text-gray-500">
-                    Everyone connected can write here.
-                </p>
+                <div>
+                    <h2 className="text-sm font-semibold theme-text-color">
+                        Direct messages
+                    </h2>
+                    <p className="text-[11px] text-gray-500">
+                        Private chat between you and your friend.
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    onClick={handleRemoveFriend}
+                    disabled={removing}
+                    className={`cursor-pointer rounded-full border px-3 py-1.5 text-[11px] font-semibold shadow-sm transition ${
+                        removing
+                            ? "border-red-300 bg-red-100 text-red-400 cursor-not-allowed"
+                            : "border-red-200 bg-white text-red-600 hover:bg-red-50"
+                    }`}
+                >
+                    {removing ? "Removing…" : "Remove friend"}
+                </button>
             </header>
 
+            {removeError && (
+                <div className="border-b border-red-100 bg-red-50 px-4 py-2 text-[11px] text-red-700">
+                    {removeError}
+                </div>
+            )}
             <main className="flex-1 overflow-y-auto px-4 py-4 space-y-2 bg-gray-50/60">
                 {loading && (
                     <p className="text-sm text-gray-500">Loading messages...</p>
@@ -55,12 +119,13 @@ export function GlobalChatScreen({
 
                 {!loading && messages.length === 0 && !error && (
                     <p className="text-sm text-gray-500">
-                        No messages yet - be the first to say hi
+                        No messages yet - say something exrtaordinary!
                     </p>
                 )}
 
                 {messages.map((m) => {
-                    const isMine = user && m.authorId === user.id;
+                    const isMine =
+                        currentUserId != null && m.authorId === currentUserId;
                     const timestamp = m.createdAt
                         ? new Date(m.createdAt).toLocaleTimeString([], {
                               hour: "2-digit",
@@ -70,11 +135,7 @@ export function GlobalChatScreen({
 
                     const displayName = isMine
                         ? "You"
-                        : m.authorDisplayName ||
-                          m.authorEmail ||
-                          (m.authorId != null
-                              ? `User #${m.authorId}`
-                              : "Unknown user");
+                        : m.authorDisplayName ?? friendLabel;
 
                     return (
                         <div
@@ -83,14 +144,14 @@ export function GlobalChatScreen({
                                 isMine ? "justify-end" : "justify-start"
                             }`}
                         >
-                            <div
+                            <article
                                 className={`max-w-xs sm:max-w-sm rounded-2xl px-3 py-2 text-sm shadow-sm border ${
                                     isMine
                                         ? "bg-green-500 text-white border-green-400"
                                         : "bg-white text-gray-900 border-gray-200"
                                 }`}
                             >
-                                <div className="flex items-center justify-between gap-2 mb-1">
+                                <header className="mb-1 flex items-center justify-between gap-2">
                                     <span className="text-xs font-semibold truncate">
                                         {displayName}
                                     </span>
@@ -103,14 +164,15 @@ export function GlobalChatScreen({
                                     >
                                         {timestamp}
                                     </span>
-                                </div>
+                                </header>
                                 <p className="text-sm whitespace-pre-wrap wrap-break-word">
                                     {m.body}
                                 </p>
-                            </div>
+                            </article>
                         </div>
                     );
                 })}
+
                 <div ref={bottomRef} />
             </main>
 
@@ -120,7 +182,7 @@ export function GlobalChatScreen({
             >
                 <input
                     className="flex-1 rounded-full border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent"
-                    placeholder="Write a message…"
+                    placeholder="Write a private message…"
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
                 />
@@ -129,11 +191,9 @@ export function GlobalChatScreen({
                     className="rounded-full theme-bg-color px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition shadow-sm cursor-pointer"
                     disabled={!body.trim() || sending}
                 >
-                    {sending ? "Sending…" : "Send"}
+                    {sending ? "Sending..." : "Send"}
                 </button>
             </form>
-        </div>
+        </section>
     );
 }
-
-export default GlobalChatScreen;

@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useFetch } from "@/app/hooks/useFetch";
-import { links } from "@/app/links";
 
-export type GlobalChatMessage = {
+export type RoomChatMessage = {
     id: number;
     roomId: number | null;
     threadId: number | null;
@@ -16,18 +15,26 @@ export type GlobalChatMessage = {
     authorEmail?: string | null;
 };
 
-type GetMessagesResponse = GlobalChatMessage[];
-type SendMessageResponse = GlobalChatMessage;
+type GetMessagesResponse = RoomChatMessage[];
+type SendMessageResponse = RoomChatMessage;
 
-export function useGlobalChat(initialMessages: GlobalChatMessage[] = []) {
+/*
+  very similar to useGlobalChat but onl now one room
+*/
+
+export function useRoomChat(
+    roomId: number,
+    initialMessages: RoomChatMessage[] = []
+) {
     const { request } = useFetch();
 
     const [messages, setMessages] =
-        useState<GlobalChatMessage[]>(initialMessages);
+        useState<RoomChatMessage[]>(initialMessages);
     const [loading, setLoading] = useState(initialMessages.length === 0);
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // keep in sync with server-provided messages
     useEffect(() => {
         if (initialMessages.length > 0) {
             setMessages(initialMessages);
@@ -35,13 +42,13 @@ export function useGlobalChat(initialMessages: GlobalChatMessage[] = []) {
         }
     }, [initialMessages]);
 
-    async function loadMessages() {
+    async function reload() {
         try {
             setLoading(true);
             setError(null);
 
             const res = await request<GetMessagesResponse>(
-                links.api.chat.global,
+                `/api/v1/groups/${roomId}/messages`,
                 {
                     method: "GET",
                     credentials: "include",
@@ -50,7 +57,7 @@ export function useGlobalChat(initialMessages: GlobalChatMessage[] = []) {
 
             setMessages(res);
         } catch (err: any) {
-            setError(err?.message ?? "Unknown error has occurred");
+            setError(err?.message ?? "Unknown error while loading messages");
         } finally {
             setLoading(false);
         }
@@ -65,28 +72,25 @@ export function useGlobalChat(initialMessages: GlobalChatMessage[] = []) {
             setError(null);
 
             const newMessage = await request<SendMessageResponse>(
-                links.api.chat.global,
+                `/api/v1/groups/${roomId}/messages`,
                 {
                     method: "POST",
                     credentials: "include",
                     headers: {
-                        "Content-type": "application/json",
+                        "Content-Type": "application/json",
                     },
                     body: JSON.stringify({ body: trimmed }),
                 }
             );
 
-            // trying my hardest to not have duplicate messages xD
-            // this stuff is so annoying, sending a message causes duplicate because it renders it
-            // but also the one you "sent"
-            // this seems to fix it.
+            // avoid duplicates
             setMessages((prev) => {
                 const exists = prev.some((m) => m.id === newMessage.id);
                 if (exists) return prev;
                 return [...prev, newMessage];
             });
         } catch (err: any) {
-            setError(err?.message ?? "Unknown error has occurred");
+            setError(err?.message ?? "Unknown error while sending message");
         } finally {
             setSending(false);
         }
@@ -97,9 +101,9 @@ export function useGlobalChat(initialMessages: GlobalChatMessage[] = []) {
         loading,
         sending,
         error,
-        reload: loadMessages,
+        reload,
         sendMessage,
     };
 }
 
-export default useGlobalChat;
+export default useRoomChat;

@@ -1,29 +1,43 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import useGlobalChat, { GlobalChatMessage } from "../hooks/useGlobalChat";
+import useRoomChat, { RoomChatMessage } from "../hooks/useRoomChat";
 import { useAuth } from "@/app/hooks/useAuth";
 
-type GlobalChatScreenProps = {
-    initialMessages?: GlobalChatMessage[];
+/*
+  pretty similar layout to global chat, but to one room
+*/
+
+type Props = {
+    roomId: number;
+    realtimeVersion?: number;
+    initialMessages?: RoomChatMessage[];
 };
 
-export function GlobalChatScreen({
+export default function RoomChatScreen({
+    roomId,
+    realtimeVersion,
     initialMessages = [],
-}: GlobalChatScreenProps) {
+}: Props) {
     const { user } = useAuth();
-    const { messages, loading, sending, error, sendMessage } =
-        useGlobalChat(initialMessages);
-    const [body, setBody] = useState("");
+    const currentUserId = user?.id ?? null;
 
-    // poor mans attempt to always focus on newest message in globalchat
+    const { messages, loading, sending, error, sendMessage, reload } =
+        useRoomChat(roomId, initialMessages);
+
+    const [body, setBody] = useState("");
     const bottomRef = useRef<HTMLDivElement | null>(null);
 
+    useEffect(() => {
+        reload();
+    }, [roomId, realtimeVersion]);
+
+    // scroll to newest as always
     useEffect(() => {
         if (!bottomRef.current) return;
 
         bottomRef.current.scrollIntoView({
-            behavior: "smooth", // i refuse to blieve "behavior is grammatically correct, its behaviour, duuh."
+            behavior: "smooth",
             block: "end",
         });
     }, [messages.length]);
@@ -31,18 +45,19 @@ export function GlobalChatScreen({
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
         if (!body.trim()) return;
+
         await sendMessage(body);
         setBody("");
     }
 
     return (
-        <div className="flex h-full flex-col">
+        <section className="flex h-full flex-col">
             <header className="border-b border-gray-100 px-4 py-3 bg-white/90">
                 <h2 className="text-sm font-semibold theme-text-color">
-                    Global chat
+                    Room chat
                 </h2>
                 <p className="text-[11px] text-gray-500">
-                    Everyone connected can write here.
+                    Messages are only visible to members of this room.
                 </p>
             </header>
 
@@ -55,12 +70,13 @@ export function GlobalChatScreen({
 
                 {!loading && messages.length === 0 && !error && (
                     <p className="text-sm text-gray-500">
-                        No messages yet - be the first to say hi
+                        No messages in this room yet - say hi!
                     </p>
                 )}
 
                 {messages.map((m) => {
-                    const isMine = user && m.authorId === user.id;
+                    const isMine =
+                        currentUserId != null && m.authorId === currentUserId;
                     const timestamp = m.createdAt
                         ? new Date(m.createdAt).toLocaleTimeString([], {
                               hour: "2-digit",
@@ -70,8 +86,7 @@ export function GlobalChatScreen({
 
                     const displayName = isMine
                         ? "You"
-                        : m.authorDisplayName ||
-                          m.authorEmail ||
+                        : m.authorDisplayName ??
                           (m.authorId != null
                               ? `User #${m.authorId}`
                               : "Unknown user");
@@ -83,14 +98,14 @@ export function GlobalChatScreen({
                                 isMine ? "justify-end" : "justify-start"
                             }`}
                         >
-                            <div
+                            <article
                                 className={`max-w-xs sm:max-w-sm rounded-2xl px-3 py-2 text-sm shadow-sm border ${
                                     isMine
                                         ? "bg-green-500 text-white border-green-400"
                                         : "bg-white text-gray-900 border-gray-200"
                                 }`}
                             >
-                                <div className="flex items-center justify-between gap-2 mb-1">
+                                <header className="mb-1 flex items-center justify-between gap-2">
                                     <span className="text-xs font-semibold truncate">
                                         {displayName}
                                     </span>
@@ -103,14 +118,15 @@ export function GlobalChatScreen({
                                     >
                                         {timestamp}
                                     </span>
-                                </div>
+                                </header>
                                 <p className="text-sm whitespace-pre-wrap wrap-break-word">
                                     {m.body}
                                 </p>
-                            </div>
+                            </article>
                         </div>
                     );
                 })}
+
                 <div ref={bottomRef} />
             </main>
 
@@ -129,11 +145,9 @@ export function GlobalChatScreen({
                     className="rounded-full theme-bg-color px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition shadow-sm cursor-pointer"
                     disabled={!body.trim() || sending}
                 >
-                    {sending ? "Sending…" : "Send"}
+                    {sending ? "Sending..." : "Send"}
                 </button>
             </form>
-        </div>
+        </section>
     );
 }
-
-export default GlobalChatScreen;

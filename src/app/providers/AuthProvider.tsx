@@ -1,9 +1,7 @@
 "use client";
 
-import { createContext, Dispatch, SetStateAction, useState } from "react";
+import { createContext, useState } from "react";
 import { User as CoreUser } from "../../../types/User";
-import { useFetch } from "../hooks/useFetch";
-
 type AuthUser = CoreUser | null;
 
 type AuthContextType = {
@@ -24,8 +22,6 @@ export function AuthProvider({
 }) {
     const [user, setUser] = useState<AuthUser>(initialUser);
 
-    const { request } = useFetch();
-
     const login = (nextUser: CoreUser) => {
         // cookie is already set by /api/login, so here we just hydrate
         setUser(nextUser);
@@ -35,7 +31,8 @@ export function AuthProvider({
     // or if should be done 2 different places but here we are
     const logout = async () => {
         try {
-            await request("/api/v1/auth/logout", {
+            await fetch("/api/v1/auth/logout", {
+                // using fetch, not useFetch hook here becuase of potential bugs
                 method: "POST",
                 credentials: "include",
             });
@@ -51,8 +48,8 @@ export function AuthProvider({
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, updateUser }}>
+        <AuthContext value={{ user, login, logout, updateUser }}>
             {children}
-        </AuthContext.Provider>
+        </AuthContext>
     );
 }
