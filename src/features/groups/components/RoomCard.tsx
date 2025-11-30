@@ -5,12 +5,16 @@ interface RoomCardProps {
     room: Room;
     isSelected: boolean;
     onSelect: (roomId: string | number) => void;
+    canDelete: boolean;
+    onDeleted: (roomId: string | number) => void;
 }
 
 export default function RoomCard({
     room,
     isSelected,
     onSelect,
+    canDelete,
+    onDeleted,
 }: RoomCardProps) {
     const visibilityColor =
         room.visibility === "public"
@@ -40,7 +44,13 @@ export default function RoomCard({
                 </span>
             </div>
 
-            {isSelected && <RoomDetailsPanel roomId={room.id} />}
+            {isSelected && (
+                <RoomDetailsPanel
+                    roomId={room.id}
+                    canDelete={canDelete}
+                    onDeleted={onDeleted}
+                />
+            )}
         </div>
     );
 }

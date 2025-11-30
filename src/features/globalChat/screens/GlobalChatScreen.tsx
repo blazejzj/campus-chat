@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import useGlobalChat, { GlobalChatMessage } from "../hooks/useGlobalChat";
 import { useAuth } from "@/app/hooks/useAuth";
 
@@ -15,6 +15,18 @@ export function GlobalChatScreen({
     const { messages, loading, sending, error, sendMessage } =
         useGlobalChat(initialMessages);
     const [body, setBody] = useState("");
+
+    // poor mans attempt to always focus on newest message in globalchat
+    const bottomRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (!bottomRef.current) return;
+
+        bottomRef.current.scrollIntoView({
+            behavior: "smooth", // i refuse to blieve "behavior is grammatically correct, its behaviour, duuh."
+            block: "end",
+        });
+    }, [messages.length]);
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
@@ -95,6 +107,7 @@ export function GlobalChatScreen({
                         </div>
                     );
                 })}
+                <div ref={bottomRef} />
             </main>
 
             <form

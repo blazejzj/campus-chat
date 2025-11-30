@@ -6,6 +6,8 @@ import RoomsSidebar from "@/features/groups/components/RoomSidebar";
 import GlobalChatScreen from "@/features/globalChat/screens/GlobalChatScreen";
 import type { GlobalChatMessage } from "@/features/globalChat/hooks/useGlobalChat";
 import { links } from "@/app/links";
+import RoomInviteNotificationsBell from "@/features/notifications/components/RoomInviteNotificationsBell";
+import { navigate } from "rwsdk/client";
 
 type DashboardScreenProps = {
     initialGlobalMessages: GlobalChatMessage[];
@@ -23,6 +25,9 @@ export default function DashboardScreen({
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [activeChat, setActiveChat] = useState<ActiveChat>("global");
 
+    // this could have probably been solved so much easier, but I just have no idea
+    const [roomsReloadToken, setRoomsReloadToken] = useState(0);
+
     if (!user) {
         return (
             <div className="flex h-screen items-center justify-center bg-linear-to-br from-gray-50 via-slate-50 to-gray-100">
@@ -38,12 +43,22 @@ export default function DashboardScreen({
         );
     }
 
-    const userName = user.email.split("@")[0];
-    const userInitial = userName.charAt(0).toUpperCase();
+    const userDisplayName = user.displayName || null;
+    const userName = userDisplayName || user.email.split("@")[0];
+
+    const userInitial =
+        (userDisplayName || user.email)[0]?.toUpperCase() || "U";
 
     const handleSelectRoom = (roomId: string | number) => {
         setSelectedRoomId(roomId);
         setActiveChat("room");
+    };
+
+    const handleRoomDeleted = (roomId: string | number) => {
+        if (selectedRoomId === roomId) {
+            setSelectedRoomId(null);
+            setActiveChat("global");
+        }
     };
 
     const showRoomChat = activeChat === "room" && selectedRoomId != null;
@@ -72,6 +87,8 @@ export default function DashboardScreen({
                     <RoomsSidebar
                         selectedRoomId={selectedRoomId}
                         onSelectRoom={handleSelectRoom}
+                        onRoomDeleted={handleRoomDeleted}
+                        reloadToken={roomsReloadToken}
                     />
                 </div>
 
@@ -83,7 +100,7 @@ export default function DashboardScreen({
                             </div>
                             <div className="min-w-0">
                                 <p className="text-sm font-medium text-gray-900 truncate">
-                                    {userName}
+                                    {userDisplayName || userName}
                                 </p>
                                 <p className="text-[11px] text-gray-500 truncate">
                                     {user.email}
@@ -91,12 +108,13 @@ export default function DashboardScreen({
                             </div>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <a
-                                href={links.pages.profile}
-                                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-[11px] font-medium theme-text-color hover:bg-gray-50 transition text-center"
+                            <button
+                                type="button"
+                                onClick={() => navigate(links.pages.profile)}
+                                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-[11px] font-medium theme-text-color hover:bg-gray-50 transition text-center cursor-pointer"
                             >
                                 Profile
-                            </a>
+                            </button>
                             <button
                                 onClick={logout}
                                 className="px-3 py-1.5 rounded-lg bg-red-500 text-[11px] font-semibold text-white hover:bg-red-600 transition shadow-sm text-center cursor-pointer"
@@ -136,17 +154,17 @@ export default function DashboardScreen({
                         </div>
                     </div>
 
-                    <div className="hidden sm:flex items-center space-x-3 text-xs text-gray-500">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-2 py-1 border border-green-100">
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-2 py-1 border border-green-100">
                             <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
                             Online
                         </span>
-                        <span className="border-l border-gray-200 pl-3">
-                            Logged in as{" "}
-                            <span className="font-medium text-gray-800">
-                                {userName}
-                            </span>
-                        </span>
+
+                        <RoomInviteNotificationsBell
+                            onAcceptedInvite={() =>
+                                setRoomsReloadToken((prev) => prev + 1)
+                            }
+                        />
                     </div>
                 </header>
 

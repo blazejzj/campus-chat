@@ -12,12 +12,15 @@ import { useFetch } from "@/app/hooks/useFetch";
 interface RoomsSidebarProps {
     selectedRoomId: string | number | null;
     onSelectRoom: (roomId: string | number) => void;
+    onRoomDeleted?: (roomId: string | number) => void;
+    reloadToken?: number;
 }
 
 export interface Room {
     id: string | number;
     name: string;
     visibility: "public" | "private";
+    createdBy?: string | null;
 }
 
 interface ErrorDetails {
@@ -37,6 +40,8 @@ const API_BASE_PATH = "/api/v1/groups";
 export default function RoomsSidebar({
     selectedRoomId,
     onSelectRoom,
+    onRoomDeleted,
+    reloadToken,
 }: RoomsSidebarProps) {
     const { user } = useAuth();
     const {
@@ -48,9 +53,6 @@ export default function RoomsSidebar({
     const [rooms, setRooms] = useState<Room[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newRoomName, setNewRoomName] = useState("");
-    const [newRoomVisibility, setNewRoomVisibility] = useState<
-        "public" | "private"
-    >("public");
 
     const loadRooms = async () => {
         if (!user) return;
@@ -62,7 +64,6 @@ export default function RoomsSidebar({
             });
             setRooms(data);
         } catch (err) {
-            console.error("Error loading rooms:", err);
             setRooms([]);
         }
     };
@@ -81,7 +82,6 @@ export default function RoomsSidebar({
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     name: newRoomName.trim(),
-                    visibility: newRoomVisibility,
                 }),
             });
 
@@ -93,18 +93,14 @@ export default function RoomsSidebar({
                             .map((i) => i.message)
                             .join("; ")
                     );
-                } else {
-                    setError(errorData.error || "Could not create a room");
                 }
                 return;
             }
             setRooms((prev) => [data as Room, ...prev]);
             setIsModalOpen(false);
             setNewRoomName("");
-            setNewRoomVisibility("public");
             setError("");
         } catch (err: any) {
-            console.error("Error creating room:", err);
             const errorData = err.body || err.responseJson || {};
 
             if (errorData.details?.issues?.length) {
@@ -127,13 +123,19 @@ export default function RoomsSidebar({
     const handleCancelCreation = () => {
         setIsModalOpen(false);
         setNewRoomName("");
-        setNewRoomVisibility("public");
         setError("");
+    };
+
+    const handleRoomDeleted = (roomId: string | number) => {
+        setRooms((prev) => prev.filter((r) => r.id !== roomId));
+        if (onRoomDeleted) {
+            onRoomDeleted(roomId);
+        }
     };
 
     useEffect(() => {
         if (user) loadRooms();
-    }, [user]);
+    }, [user, reloadToken]);
 
     const ErrorDisplay = () =>
         creationError ? (
@@ -152,7 +154,7 @@ export default function RoomsSidebar({
                         Create new room
                     </h2>
                     <p className="text-xs text-gray-500 mb-4">
-                        Give your room a clear name and choose visibility.
+                        Give your room a clear name.
                     </p>
                     <label className="block text-sm font-medium theme-text-color mb-1">
                         Name
@@ -172,27 +174,7 @@ export default function RoomsSidebar({
                             className="w-full p-3 border border-gray-300 bg-gray-50 text-gray-900 rounded-lg mb-4 focus:ring-2 focus:ring-(--primary-color) focus:border-transparent text-sm"
                             required
                         />
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium theme-text-color mb-1">
-                                Visibility
-                            </label>
-                            <select
-                                value={newRoomVisibility}
-                                onChange={(e) =>
-                                    setNewRoomVisibility(
-                                        e.target.value as "public" | "private"
-                                    )
-                                }
-                                className="w-full p-3 border border-gray-300 bg-gray-50 text-gray-900 rounded-lg focus:ring-2 focus:ring-(--primary-color) focus:border-transparent text-sm"
-                            >
-                                <option value="public">
-                                    Public (everyone can see)
-                                </option>
-                                <option value="private">
-                                    Private (only invited)
-                                </option>
-                            </select>
-                        </div>
+
                         <div className="flex justify-end space-x-3 text-sm">
                             <button
                                 type="button"
@@ -217,14 +199,7 @@ export default function RoomsSidebar({
                 </div>
             </div>
         );
-    }, [
-        isModalOpen,
-        creationError,
-        newRoomName,
-        newRoomVisibility,
-        handleCreateRoom,
-        handleCancelCreation,
-    ]);
+    }, [isModalOpen, creationError, newRoomName]);
 
     if (!user)
         return (
@@ -254,17 +229,33 @@ export default function RoomsSidebar({
             <ErrorDisplay />
 
             <nav className="grow overflow-y-auto p-3 space-y-2 bg-gray-50/60">
-                {rooms.map((room) => (
-                    <RoomCard
-                        key={room.id}
-                        room={room}
-                        isSelected={selectedRoomId === room.id}
-                        onSelect={onSelectRoom}
-                    />
-                ))}
+                {rooms.map((room) => {
+                    const currentUserId = user?.id
+                        ? String(user.id)
+                        : undefined;
+                    const createdBy = room.createdBy
+                        ? String(room.createdBy)
+                        : undefined;
+
+                    const canDelete =
+                        currentUserId && createdBy
+                            ? currentUserId === createdBy
+                            : false;
+
+                    return (
+                        <RoomCard
+                            key={room.id}
+                            room={room}
+                            isSelected={selectedRoomId === room.id}
+                            onSelect={onSelectRoom}
+                            canDelete={canDelete}
+                            onDeleted={handleRoomDeleted}
+                        />
+                    );
+                })}
                 {rooms.length === 0 && !fetchLoading && !creationError && (
                     <div className="p-4 text-center text-gray-400 text-sm italic">
-                        No rooms yet – click + to create one.
+                        No rooms yet - click + to create one.
                     </div>
                 )}
             </nav>

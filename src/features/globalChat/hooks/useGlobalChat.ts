@@ -53,12 +53,6 @@ export function useGlobalChat(initialMessages: GlobalChatMessage[] = []) {
         }
     }
 
-    useEffect(() => {
-        if (initialMessages.length === 0) {
-            loadMessages();
-        }
-    }, []);
-
     async function sendMessage(body: string) {
         const trimmed = body.trim();
         if (!trimmed) return;
