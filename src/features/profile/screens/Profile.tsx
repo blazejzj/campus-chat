@@ -29,7 +29,7 @@ type SettingsSectionProps = {
 
 function SettingsSection({ title, subtitle, children }: SettingsSectionProps) {
     return (
-        <section className="bg-white/90 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm p-6 md:p-7 space-y-4">
+        <section className="bg-white/90 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm p-4 md:p-7 space-y-4">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1.5">
                 <div>
                     <h2 className="text-base md:text-lg font-semibold text-gray-900">
@@ -387,7 +387,9 @@ export default function Profile() {
 
     return (
         <div className="flex min-h-screen bg-linear-to-br from-gray-50 via-slate-50 to-gray-100">
-            <SideBar />
+            <div className="hidden lg:block">
+                <SideBar />
+            </div>
 
             <main className="flex-1 px-4 py-6 md:px-8 md:py-8 lg:px-10 lg:py-10 overflow-y-auto">
                 <div className="max-w-5xl mx-auto space-y-8">
@@ -420,7 +422,7 @@ export default function Profile() {
                         </div>
                     </header>
 
-                    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+                    <div className="grid gap-6 grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
                         <div className="space-y-6">
                             <SettingsSection
                                 title="Profile picture"
