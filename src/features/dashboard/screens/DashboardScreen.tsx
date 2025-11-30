@@ -6,9 +6,9 @@ import RoomsSidebar from "@/features/groups/components/RoomSidebar";
 import GlobalChatScreen from "@/features/globalChat/screens/GlobalChatScreen";
 import type { GlobalChatMessage } from "@/features/globalChat/hooks/useGlobalChat";
 import { links } from "@/app/links";
-import RoomInviteNotificationsBell from "@/features/notifications/components/RoomInviteNotificationsBell";
 import { navigate } from "rwsdk/client";
 import FriendsList from "@/features/friends/components/FriendList";
+import NotificationsBell from "@/features/notifications/components/NotificationsBell";
 
 type DashboardScreenProps = {
     initialGlobalMessages: GlobalChatMessage[];
@@ -31,6 +31,8 @@ export default function DashboardScreen({
 
     // this could have probably been solved so much easier, but I just have no idea
     const [roomsReloadToken, setRoomsReloadToken] = useState(0);
+    // same stuff with friends
+    const [friendsReloadToken, setFriendsReloadToken] = useState(0);
 
     if (!user) {
         return (
@@ -54,6 +56,13 @@ export default function DashboardScreen({
         (userDisplayName || user.email)[0]?.toUpperCase() || "U";
 
     const handleSelectRoom = (roomId: string | number) => {
+        // toggle: klikk på samme rom = gå tilbake til global chat
+        if (selectedRoomId === roomId) {
+            setSelectedRoomId(null);
+            setActiveChat("global");
+            return;
+        }
+
         setSelectedRoomId(roomId);
         setActiveChat("room");
     };
@@ -69,7 +78,7 @@ export default function DashboardScreen({
 
     return (
         <div className="flex h-screen bg-linear-to-br from-gray-50 via-slate-50 to-gray-100">
-            <div
+            <aside
                 className={`${
                     isSidebarOpen ? "flex" : "hidden"
                 } sm:flex w-72 shrink-0 bg-white/90 border-r border-gray-200 flex-col shadow-md absolute inset-y-0 left-0 z-20 sm:relative`}
@@ -102,13 +111,15 @@ export default function DashboardScreen({
                                 selectedFriendId={selectedFriendId}
                                 onSelectFriend={(friendId) => {
                                     setSelectedFriendId(friendId);
+                                    setActiveChat("friends");
                                 }}
+                                reloadToken={friendsReloadToken}
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="border-t border-gray-100 p-3 bg-white/80">
+                <footer className="border-t border-gray-100 p-3 bg-white/80">
                     <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 min-w-0">
                             <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center text-xs font-semibold theme-text-color shadow-sm">
@@ -139,15 +150,15 @@ export default function DashboardScreen({
                             </button>
                         </div>
                     </div>
-                </div>
-            </div>
+                </footer>
+            </aside>
 
             <div className="flex-1 flex flex-col relative">
-                <header className="flex justify-between items-center px-4 py-3 border-b border-gray-200 bg-white/90 backdrop-blur shadow-sm">
+                <header className="relative z-40 flex justify-between items-center px-4 py-3 border-b border-gray-200 bg-white/90 backdrop-blur shadow-sm">
                     <div className="flex items-center">
                         <button
                             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                            className="sm:hidden p-2 mr-3 rounded-lg hover:bg-gray-100 transition"
+                            className="sm:hidden p-2 mr-3 rounded-lg hover:bg-gray-100 transition cursor-pointer"
                             aria-label="Toggle rooms sidebar"
                         >
                             {/*found a little icon, should be changed, maybe FontAwesome later? */}
@@ -163,31 +174,33 @@ export default function DashboardScreen({
                                 Dashboard
                             </p>
                             <h2 className="text-lg font-semibold theme-text-color">
-                                {showRoomChat
-                                    ? `Room #${selectedRoomId}`
-                                    : "Global chat"}
+                                {activeChat === "global" && "Global chat"}
+                                {activeChat === "room" && "Room chat"}
+                                {activeChat === "friends" && "Friend chat"}
                             </h2>
                         </div>
                     </div>
-
                     <div className="flex items-center gap-3 text-xs text-gray-500">
                         <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-2 py-1 border border-green-100">
                             <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
                             Online
                         </span>
 
-                        <RoomInviteNotificationsBell
-                            onAcceptedInvite={() =>
+                        <NotificationsBell
+                            onRoomInviteAccepted={() =>
                                 setRoomsReloadToken((prev) => prev + 1)
+                            }
+                            onFriendAccepted={() =>
+                                setFriendsReloadToken((prev) => prev + 1)
                             }
                         />
                     </div>
                 </header>
 
-                <div className="flex items-center justify-between px-4 pt-3 pb-2 bg-white/80 border-b border-gray-200">
+                <section className="flex items-center justify-between px-4 pt-3 pb-2 bg-white/80 border-b border-gray-200">
                     <div className="inline-flex rounded-full bg-gray-100 p-1 text-xs">
                         <button
-                            className={`px-3 py-1.5 rounded-full transition ${
+                            className={`px-3 py-1.5 rounded-full transition cursor-pointer ${
                                 activeChat === "global"
                                     ? "theme-bg-color text-white shadow-sm"
                                     : "text-gray-600 hover:bg-white"
@@ -197,7 +210,7 @@ export default function DashboardScreen({
                             Global chat
                         </button>
                         <button
-                            className={`px-3 py-1.5 rounded-full transition ${
+                            className={`px-3 py-1.5 rounded-full transition cursor-pointer ${
                                 activeChat === "room"
                                     ? "theme-bg-color text-white shadow-sm"
                                     : "text-gray-600 hover:bg-white"
@@ -213,17 +226,25 @@ export default function DashboardScreen({
                         >
                             Room chat
                         </button>
+                        <button
+                            className={`px-3 py-1.5 rounded-full transition cursor-pointer ${
+                                activeChat === "friends"
+                                    ? "theme-bg-color text-white shadow-sm"
+                                    : "text-gray-600 hover:bg-white"
+                            } ${
+                                !selectedFriendId
+                                    ? "opacity-40 cursor-not-allowed hover:bg-gray-100"
+                                    : ""
+                            }`}
+                            onClick={() =>
+                                selectedFriendId && setActiveChat("friends")
+                            }
+                            disabled={!selectedFriendId}
+                        >
+                            Friend chat
+                        </button>
                     </div>
-
-                    {selectedRoomId && (
-                        <p className="text-[11px] text-gray-500 ml-4">
-                            Selected room:{" "}
-                            <span className="font-medium theme-text-color">
-                                {selectedRoomId}
-                            </span>
-                        </p>
-                    )}
-                </div>
+                </section>
 
                 <main className="flex-1 overflow-y-auto px-4 py-4">
                     <div className="h-full max-w-5xl mx-auto">
@@ -236,11 +257,7 @@ export default function DashboardScreen({
 
                             {activeChat === "room" && selectedRoomId && (
                                 <div className="h-full flex items-center justify-center text-gray-500 text-sm">
-                                    Room chat for room{" "}
-                                    <span className="font-semibold ml-1 theme-text-color">
-                                        {selectedRoomId}
-                                    </span>{" "}
-                                    will live here.
+                                    Room chat for this room will live here.
                                 </div>
                             )}
 
@@ -248,6 +265,20 @@ export default function DashboardScreen({
                                 <div className="h-full flex items-center justify-center text-gray-400 text-sm">
                                     Select a room from the sidebar to start
                                     chatting.
+                                </div>
+                            )}
+
+                            {activeChat === "friends" && selectedFriendId && (
+                                <div className="h-full flex items-center justify-center text-gray-500 text-sm">
+                                    Direct messages with your friend will live
+                                    here.
+                                </div>
+                            )}
+
+                            {activeChat === "friends" && !selectedFriendId && (
+                                <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+                                    Select a friend from the sidebar to start a
+                                    chat.
                                 </div>
                             )}
                         </div>
@@ -258,7 +289,7 @@ export default function DashboardScreen({
             {isSidebarOpen && (
                 <div
                     onClick={() => setIsSidebarOpen(false)}
-                    className="sm:hidden absolute inset-0 bg-black/20 z-10"
+                    className="sm:hidden absolute inset-0 bg-black/20 z-10 cursor-pointer"
                 />
             )}
         </div>

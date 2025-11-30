@@ -63,7 +63,6 @@ export function useRoomInviteNotifications() {
                 setNotifications([]);
             }
         } catch (err: any) {
-            console.error("Error loading notifications:", err);
             setError(err.message || "Failed to load notifications");
             setNotifications([]);
         } finally {

@@ -15,12 +15,14 @@ type FriendsListProps = {
     selectedFriendId: number | null;
     onSelectFriend: (friendId: number) => void;
     onFriendRemoved?: (friendId: number) => void;
+    reloadToken?: number;
 };
 
 export default function FriendsList({
     selectedFriendId,
     onSelectFriend,
     onFriendRemoved,
+    reloadToken,
 }: FriendsListProps) {
     const { request, loading, error, setError } = useFetch();
     const [friends, setFriends] = useState<Friend[]>([]);
@@ -44,7 +46,7 @@ export default function FriendsList({
 
     useEffect(() => {
         loadFriends();
-    }, []);
+    }, [reloadToken]);
 
     async function handleRemove(friendId: number) {
         try {
@@ -73,6 +75,7 @@ export default function FriendsList({
         try {
             setAdding(true);
 
+            console.log("sending", JSON.stringify({ email: trimmed }));
             await request(links.api.friends.friends, {
                 method: "POST",
                 credentials: "include",

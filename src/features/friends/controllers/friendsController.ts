@@ -64,7 +64,7 @@ export const createFriendsController = (service: typeof friendsService) => ({
 
                 return errorResponse(
                     result.reason ?? Errors.INTERNAL_SERVER_ERROR,
-                    "Failed to add friend"
+                    "Failed to send friend request"
                 );
             }
 
@@ -106,7 +106,66 @@ export const createFriendsController = (service: typeof friendsService) => ({
             });
         }
 
-        return methodNotAllowed(["GET", "DELETE"]);
+        return methodNotAllowed(["GET", "DELETE", "POST"]);
+    },
+
+    async respondToFriendRequest(ctx: RequestInfo): Promise<Response> {
+        const user = ctx.ctx.user;
+        if (!user) {
+            return errorResponse(Errors.UNAUTHORIZED, "Unauthorized", 401);
+        }
+
+        if (ctx.request.method.toUpperCase() !== "POST") {
+            return methodNotAllowed(["POST"]);
+        }
+
+        let body: any;
+        try {
+            body = await ctx.request.json();
+        } catch {
+            return errorResponse(Errors.VALIDATION_ERROR, "Invalid JSON body");
+        }
+
+        const { fromUserId, notificationId, action } = body ?? {};
+
+        if (
+            typeof fromUserId !== "number" ||
+            typeof notificationId !== "number" ||
+            (action !== "accept" && action !== "decline")
+        ) {
+            return errorResponse(
+                Errors.VALIDATION_ERROR,
+                "Invalid request payload"
+            );
+        }
+
+        if (action === "accept") {
+            const result = await service.acceptFriendRequest(
+                user.id,
+                fromUserId,
+                notificationId
+            );
+            if (!result.ok) {
+                return errorResponse(
+                    result.reason ?? Errors.INTERNAL_SERVER_ERROR,
+                    "Failed to accept friend request"
+                );
+            }
+            return jsonResult({ ok: true, data: result.data }, 200);
+        } else {
+            const result = await service.declineFriendRequest(
+                user.id,
+                fromUserId,
+                notificationId
+            );
+            if (!result.ok) {
+                return errorResponse(
+                    result.reason ?? Errors.INTERNAL_SERVER_ERROR,
+                    "Failed to decline friend request"
+                );
+            }
+            return jsonResult({ ok: true, data: null }, 200);
+        }
     },
 });
 

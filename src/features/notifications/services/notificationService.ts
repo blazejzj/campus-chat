@@ -42,7 +42,29 @@ export const createNotificationService = (
             readAt: n.readAt ? new Date(n.readAt).toISOString() : null,
         }));
 
+        console.log(mapped);
         return { ok: true, data: mapped };
+    },
+
+    async createFriendRequestNotification(input: {
+        toUserId: number;
+        fromUserId: number;
+        fromEmail: string;
+        fromDisplayName?: string | null;
+    }) {
+        return repo.createNotification({
+            userId: input.toUserId,
+            type: "friend_request",
+            payload: {
+                fromUserId: input.fromUserId,
+                fromEmail: input.fromEmail,
+                fromDisplayName: input.fromDisplayName ?? null,
+            },
+        });
+    },
+
+    async markAsRead(id: number) {
+        return repo.markNotificationAsRead(id);
     },
 });
 

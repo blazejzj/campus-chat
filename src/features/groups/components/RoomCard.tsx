@@ -16,33 +16,22 @@ export default function RoomCard({
     canDelete,
     onDeleted,
 }: RoomCardProps) {
-    const visibilityColor =
-        room.visibility === "public"
-            ? "bg-green-100 text-green-800 border-green-200"
-            : "bg-red-100 text-red-800 border-red-200";
-    const visibilityText = room.visibility === "public" ? "Public" : "Private";
-
     return (
-        <div
-            className={`rounded-xl transition shadow-sm cursor-pointer border ${
+        <article
+            className={`rounded-xl transition shadow-sm border bg-white ${
                 isSelected
-                    ? "border-(--primary-color) bg-white"
-                    : "border-gray-200 bg-white hover:border-gray-300"
+                    ? "border-(--primary-color)"
+                    : "border-gray-200 hover:border-gray-300"
             }`}
         >
-            <div
+            <header
                 onClick={() => onSelect(room.id)}
-                className="flex items-center p-3 rounded-xl transition"
+                className="flex items-center p-3 rounded-xl transition cursor-pointer"
             >
-                <span
-                    className={`px-2 py-1 text-[10px] font-semibold rounded-full mr-3 border ${visibilityColor}`}
-                >
-                    {visibilityText}
-                </span>
-                <span className="font-medium truncate text-sm theme-text-color">
+                <h3 className="font-medium truncate text-sm theme-text-color">
                     {room.name}
-                </span>
-            </div>
+                </h3>
+            </header>
 
             {isSelected && (
                 <RoomDetailsPanel
@@ -51,6 +40,6 @@ export default function RoomCard({
                     onDeleted={onDeleted}
                 />
             )}
-        </div>
+        </article>
     );
 }

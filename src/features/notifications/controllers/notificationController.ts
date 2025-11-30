@@ -50,7 +50,6 @@ export const createNotificationController = (
                 "Failed to load notifications"
             );
         }
-
         return jsonResult(result, 200);
     },
 });
