@@ -67,6 +67,9 @@ export default function Profile() {
     const [newEmail, setNewEmail] = useState("");
     const [emailPassword, setEmailPassword] = useState("");
 
+    const [originalDisplayName, setOriginalDisplayName] = useState("");
+    const [originalStatus, setOriginalStatus] = useState("");
+
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -102,7 +105,9 @@ export default function Profile() {
                 setEmail(data.email || "");
                 setNewEmail(data.email || "");
                 setDisplayName(data.displayName || "");
+                setOriginalDisplayName(data.displayName || "");
                 setStatus(data.status || "");
+                setOriginalStatus(data.status || "");
                 setAvatarUrl(data.avatarUrl || "");
                 setNotificationsEnabled(data.notificationsEnabled ?? true);
                 updateUser({
@@ -139,10 +144,12 @@ export default function Profile() {
 
             if (updated.displayName !== undefined) {
                 setDisplayName(updated.displayName);
+                setOriginalDisplayName(updated.displayName);
                 updateUser({ displayName: updated.displayName });
             }
             if (updated.status !== undefined) {
                 setStatus(updated.status);
+                setOriginalStatus(updated.status);
             }
 
             setIsEditingName(false);
@@ -504,11 +511,16 @@ export default function Profile() {
                                         </div>
                                         <button
                                             type="button"
-                                            onClick={() =>
+                                            onClick={() => {
+                                                if (isEditingName) {
+                                                    setDisplayName(
+                                                        originalDisplayName
+                                                    );
+                                                }
                                                 setIsEditingName(
                                                     (prev) => !prev
-                                                )
-                                            }
+                                                );
+                                            }}
                                             className={chipButtonClass}
                                         >
                                             {isEditingName
@@ -545,11 +557,14 @@ export default function Profile() {
                                         </div>
                                         <button
                                             type="button"
-                                            onClick={() =>
+                                            onClick={() => {
+                                                if (isEditingStatus) {
+                                                    setStatus(originalStatus);
+                                                }
                                                 setIsEditingStatus(
                                                     (prev) => !prev
-                                                )
-                                            }
+                                                );
+                                            }}
                                             className={chipButtonClass}
                                         >
                                             {isEditingStatus
