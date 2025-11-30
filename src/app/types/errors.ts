@@ -9,6 +9,7 @@ export const Errors = {
     ROOM_CREATION_FAILED: "ROOM_CREATION_FAILED",
     ROOM_NOT_FOUND: "ROOM_NOT_FOUND",
     INVITE_NOT_FOUND: "INVITE_NOT_FOUND",
+    USER_NOT_FOUND: "USER_NOT_FOUND",
 } as const;
 
 export type ErrorCode = (typeof Errors)[keyof typeof Errors];

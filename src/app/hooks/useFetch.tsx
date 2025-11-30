@@ -5,7 +5,6 @@ import type { Result } from "@/app/types/result";
 
 type AnyResult = Result<unknown>;
 
-// TODO: move to utils?
 function isResultShape(data: any): data is AnyResult {
     return data && typeof data === "object" && "ok" in data;
 }
@@ -23,7 +22,13 @@ export function useFetch() {
 
         try {
             const res = await fetch(url, options);
-            const data = await res.json().catch(() => ({}));
+
+            let data: any = {};
+            try {
+                data = await res.json();
+            } catch {
+                data = {};
+            }
 
             if (!res.ok) {
                 let message = "Request failed"; // default message just incase
@@ -34,22 +39,23 @@ export function useFetch() {
                     data &&
                     typeof data === "object" &&
                     "error" in data &&
-                    typeof (data as any).error === "string"
+                    typeof data.error === "string"
                 ) {
-                    message = (data as any).error;
+                    message = data.error;
                 }
 
+                console.log("about to throw", message);
                 throw new Error(message);
             }
 
             if (isResultShape(data)) {
                 if (data.ok) {
                     return data.data as T;
-                } else {
-                    const message =
-                        data.message || data.reason || "Request failed";
-                    throw new Error(message);
                 }
+
+                const message = data.message || data.reason || "Request failed";
+                console.log("about to throw 2", message);
+                throw new Error(message);
             }
 
             return data as T;
@@ -57,6 +63,7 @@ export function useFetch() {
             setError(
                 err instanceof Error ? err.message : "Something went wrong"
             );
+            console.log("about to throw 3", err);
             throw err;
         } finally {
             setLoading(false);

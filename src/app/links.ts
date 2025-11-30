@@ -56,6 +56,9 @@ export const links = {
             me: "/api/v1/profile",
             avatar: "/api/v1/profile/avatar",
         },
+        friends: {
+            friends: "/api/v1/friends",
+        },
     },
     pages: {
         root: "/",

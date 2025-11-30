@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, Dispatch, SetStateAction, useState } from "react";
+import { createContext, useState } from "react";
 import { User as CoreUser } from "../../../types/User";
 import { useFetch } from "../hooks/useFetch";
 

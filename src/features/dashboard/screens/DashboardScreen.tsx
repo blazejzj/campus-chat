@@ -8,12 +8,13 @@ import type { GlobalChatMessage } from "@/features/globalChat/hooks/useGlobalCha
 import { links } from "@/app/links";
 import RoomInviteNotificationsBell from "@/features/notifications/components/RoomInviteNotificationsBell";
 import { navigate } from "rwsdk/client";
+import FriendsList from "@/features/friends/components/FriendList";
 
 type DashboardScreenProps = {
     initialGlobalMessages: GlobalChatMessage[];
 };
 
-type ActiveChat = "global" | "room";
+type ActiveChat = "global" | "room" | "friends";
 
 export default function DashboardScreen({
     initialGlobalMessages,
@@ -24,6 +25,9 @@ export default function DashboardScreen({
     >(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [activeChat, setActiveChat] = useState<ActiveChat>("global");
+    const [selectedFriendId, setSelectedFriendId] = useState<number | null>(
+        null
+    );
 
     // this could have probably been solved so much easier, but I just have no idea
     const [roomsReloadToken, setRoomsReloadToken] = useState(0);
@@ -84,12 +88,24 @@ export default function DashboardScreen({
                 </header>
 
                 <div className="flex-1 overflow-y-auto">
-                    <RoomsSidebar
-                        selectedRoomId={selectedRoomId}
-                        onSelectRoom={handleSelectRoom}
-                        onRoomDeleted={handleRoomDeleted}
-                        reloadToken={roomsReloadToken}
-                    />
+                    <div className="h-full grid grid-rows-2 divide-y divide-gray-100">
+                        <div className="min-h-0">
+                            <RoomsSidebar
+                                selectedRoomId={selectedRoomId}
+                                onSelectRoom={handleSelectRoom}
+                                onRoomDeleted={handleRoomDeleted}
+                                reloadToken={roomsReloadToken}
+                            />
+                        </div>
+                        <div className="min-h-0 bg-gray-50/60">
+                            <FriendsList
+                                selectedFriendId={selectedFriendId}
+                                onSelectFriend={(friendId) => {
+                                    setSelectedFriendId(friendId);
+                                }}
+                            />
+                        </div>
+                    </div>
                 </div>
 
                 <div className="border-t border-gray-100 p-3 bg-white/80">

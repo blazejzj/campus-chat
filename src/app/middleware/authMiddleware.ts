@@ -22,6 +22,15 @@ export async function authMiddleware({
     // TODO: change this later probably
     if (pathname.startsWith("/__realtime")) return;
 
+    if (
+        pathname.startsWith("/installHook") ||
+        pathname.startsWith("/@vite") ||
+        pathname.startsWith("/src/") ||
+        pathname.startsWith("/node_modules/")
+    ) {
+        return;
+    }
+
     // public UI routes
     const isUiPublic =
         pathname === links.pages.root ||
@@ -68,5 +77,6 @@ export async function authMiddleware({
     ctx.user = {
         id: (payload as any).id ?? (payload as any).sub,
         email: (payload as any).email,
+        displayName: (payload as any).displayName,
     };
 }
