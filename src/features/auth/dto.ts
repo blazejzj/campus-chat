@@ -1,17 +1,28 @@
 import z from "zod";
 
-// TODO: Make sure people can register their password with more than only strings, current approach doesnt make sense :D
+// a simple schems for password with basic regex, should work wonders
+const passwordSchema = z
+    .string()
+    .min(8, "Password must be at least 8 characters long")
+    .regex(/[A-Za-z]/, "Password must contain at least one letter")
+    .regex(/\d/, "Password must contain at least one number");
+
+// TODO: This could potentially be scrapepd at some point, i make it
+// because this will wokr with older rules where it wanst required to have atleast
+// 1 special symbol and a number
+const loginPasswordSchema = z
+    .string()
+    .min(8, "Password must be at least 8 characters long");
+
 export const RegisterDto = z
     .object({
-        email: z.email(),
+        email: z.email({ message: "Please enter a valid email address" }),
         displayName: z
             .string()
             .trim()
             .min(2, "Display name must be at least 2 characters")
             .max(32, "Display name must be at most 32 characters"),
-        password: z
-            .string()
-            .min(8, "Password must be atleast 8 characters long"),
+        password: passwordSchema,
         confirmPassword: z.string(),
     })
     .refine((data) => data.password === data.confirmPassword, {
@@ -20,8 +31,8 @@ export const RegisterDto = z
     });
 
 export const LoginDto = z.object({
-    email: z.email(),
-    password: z.string(),
+    email: z.email({ message: "Please enter a valid email address" }),
+    password: loginPasswordSchema,
 });
 
 export type RegisterInput = z.infer<typeof RegisterDto>;
