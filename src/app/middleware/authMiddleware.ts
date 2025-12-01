@@ -22,12 +22,7 @@ export async function authMiddleware({
     // TODO: change this later probably
     if (pathname.startsWith("/__realtime")) return;
 
-    if (
-        pathname.startsWith("/installHook") ||
-        pathname.startsWith("/@vite") ||
-        pathname.startsWith("/src/") ||
-        pathname.startsWith("/node_modules/")
-    ) {
+    if (pathname.startsWith("/api/v1/dev")) {
         return;
     }
 
