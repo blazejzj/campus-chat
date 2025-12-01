@@ -36,6 +36,8 @@ export default function RoomDetailsPanel({
     const [loadingMembers, setLoadingMembers] = useState(false);
     const [membersError, setMembersError] = useState<string | null>(null);
 
+    const [leaving, setLeaving] = useState(false);
+
     const loadMembers = useCallback(async () => {
         setLoadingMembers(true);
         setMembersError(null);
@@ -114,6 +116,12 @@ export default function RoomDetailsPanel({
         }
     };
 
+    const handleLeave = async () => {
+        // we dont want admins to leave the room
+        if (canDelete || leaving) return;
+        console.log("todo");
+    };
+
     return (
         <div className="mt-1 mx-2 mb-3 p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-800">
             <div className="flex justify-between items-center mb-2">
@@ -147,7 +155,7 @@ export default function RoomDetailsPanel({
                 ))}
             </ul>
 
-            {canDelete && (
+            {canDelete ? (
                 <>
                     <form onSubmit={handleInvite} className="mb-3">
                         <label className="block text-[11px] font-semibold text-gray-600 mb-1">
@@ -199,6 +207,24 @@ export default function RoomDetailsPanel({
                     >
                         {deleting || loading ? "Deleting..." : "Delete Room"}
                     </button>
+                </>
+            ) : (
+                <>
+                    {error && (
+                        <p className="text-[11px] text-red-600 mb-2 font-medium">
+                            {error}
+                        </p>
+                    )}
+                    <div className="flex justify-end">
+                        <button
+                            type="button"
+                            onClick={handleLeave}
+                            disabled={leaving || loading}
+                            className="cursor-pointer rounded-lg border border-red-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-red-500 hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {leaving || loading ? "Leaving…" : "Leave room"}{" "}
+                        </button>
+                    </div>
                 </>
             )}
         </div>
