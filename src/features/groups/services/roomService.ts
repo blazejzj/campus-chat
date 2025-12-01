@@ -392,6 +392,58 @@ export const createRoomService = (repo: typeof roomRepository) => ({
 
         return { ok: true, data: null };
     },
+
+    async leaveRoom(
+        roomId: string | number,
+        externalUserId: string | number
+    ): AsyncResult<null> {
+        const internaloomId = toNumericId(roomId);
+        const internalUserId = toNumericId(externalUserId);
+
+        if (internalUserId === null || internaloomId === null)
+            return { ok: false, reason: Errors.UNAUTHORIZED };
+
+        // check if the room exist first
+        const roomResult = await repo.findRoomById(internaloomId);
+        if (!roomResult.ok) {
+            return { ok: false, reason: roomResult.reason };
+        }
+
+        const room = roomResult.data;
+        if (!room) return { ok: false, reason: Errors.DATABASE_ERROR };
+
+        // the owner can't leave their own room -> has to be deleted instead
+        // maybe later we will implement throwing ownership on soembody else, but thats future
+        if (room.createdBy === internalUserId) {
+            return { ok: false, reason: Errors.UNAUTHORIZED };
+        }
+
+        // check if user is actually member
+        const membershipResult = await repo.isUserMemberOfRoom(
+            internaloomId,
+            internalUserId
+        );
+
+        if (!membershipResult.ok) {
+            return { ok: false, reason: membershipResult.reason };
+        }
+
+        if (!membershipResult.data) {
+            // -> No member canæt leave
+            return { ok: false, reason: Errors.UNAUTHORIZED };
+        }
+
+        // now remove membershsip
+        const removeResult = await repo.removeRoomMember(
+            internaloomId,
+            internalUserId
+        );
+        if (!removeResult.ok) {
+            return { ok: false, reason: removeResult.reason };
+        }
+
+        return { ok: true, data: null };
+    },
 });
 
 export const roomService = createRoomService(roomRepository);

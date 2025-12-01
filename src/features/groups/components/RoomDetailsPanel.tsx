@@ -56,7 +56,6 @@ export default function RoomDetailsPanel({
                 setMembers([]);
             }
         } catch (err: any) {
-            console.error("Error loading room members:", err);
             setMembersError(err.message || "Failed to load room members");
             setMembers([]);
         } finally {
@@ -83,7 +82,6 @@ export default function RoomDetailsPanel({
 
             onDeleted(roomId);
         } catch (err: any) {
-            console.error("Error deleting room:", err);
             setError(err.message || "Could not delete room");
         } finally {
             setDeleting(false);
@@ -109,7 +107,6 @@ export default function RoomDetailsPanel({
             setInviteMessage("Invitation sent");
             setInviteEmail("");
         } catch (err: any) {
-            console.error("Error sending invite:", err);
             setError(err.message || "Could not send invitation");
         } finally {
             setInviting(false);
@@ -119,7 +116,25 @@ export default function RoomDetailsPanel({
     const handleLeave = async () => {
         // we dont want admins to leave the room
         if (canDelete || leaving) return;
-        console.log("todo");
+
+        setError("");
+        setInviteMessage(null);
+
+        try {
+            setLeaving(false);
+            await request(`${API_BASE_PATH}/${roomId}/leave`, {
+                method: "POST",
+                credentials: "include",
+            });
+
+            // honestly, from UI perspective, "leave" is the same as "room removed from my list"
+            // so i'll use it xD
+            onDeleted(roomId);
+        } catch (err: any) {
+            setError(err.msg || "Could not leave room");
+        } finally {
+            setLeaving(false);
+        }
     };
 
     return (

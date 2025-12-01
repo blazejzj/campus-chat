@@ -163,8 +163,7 @@ export const createRoomController = (service: typeof roomService) => ({
             );
         }
 
-        const roomIdParam =
-            (ctx as any).params?.roomId ?? (ctx as any).params?.id;
+        const roomIdParam = ctx.params.roomId ?? ctx.params.id;
 
         if (!roomIdParam) {
             return errorResponse(
@@ -240,8 +239,7 @@ export const createRoomController = (service: typeof roomService) => ({
             );
         }
 
-        const roomIdParam =
-            (ctx as any).params?.roomId ?? (ctx as any).params?.id;
+        const roomIdParam = ctx.params.roomId ?? ctx.params.id;
 
         if (!roomIdParam) {
             return errorResponse(
@@ -288,8 +286,7 @@ export const createRoomController = (service: typeof roomService) => ({
             );
         }
 
-        const roomIdParam =
-            (ctx as any).params?.roomId ?? (ctx as any).params?.id;
+        const roomIdParam = ctx.params.roomId ?? ctx.params.id;
 
         if (!roomIdParam) {
             return errorResponse(
@@ -359,8 +356,7 @@ export const createRoomController = (service: typeof roomService) => ({
             );
         }
 
-        const roomIdParam =
-            (ctx as any).params?.roomId ?? (ctx as any).params?.id;
+        const roomIdParam = ctx.params.roomId ?? ctx.params?.id;
 
         if (!roomIdParam) {
             return errorResponse(
@@ -412,6 +408,43 @@ export const createRoomController = (service: typeof roomService) => ({
             return errorResponse(
                 Errors.INTERNAL_SERVER_ERROR,
                 "Failed to decline invite"
+            );
+        }
+
+        return jsonResult({ ok: true, data: null });
+    },
+
+    async leaveRoom(ctx: RequestInfo): Promise<Response> {
+        console.log("controller hit");
+        const method = ctx.request.method.toUpperCase();
+        if (method !== "POST") return methodNotAllowed(["POST"]);
+
+        const user = ctx.ctx.user;
+        if (!user)
+            return errorResponse(
+                Errors.VALIDATION_ERROR,
+                "User must be authenticated"
+            );
+
+        const roomId = ctx.params.roomId ?? ctx.params.id;
+        if (!roomId)
+            return errorResponse(
+                Errors.VALIDATION_ERROR,
+                "Room id parameter is required"
+            );
+
+        const result = await service.leaveRoom(roomId, user.id);
+
+        if (!result.ok) {
+            if (result.reason === Errors.DATABASE_ERROR) {
+                return errorResponse(
+                    Errors.DATABASE_ERROR,
+                    "Failed to leave the room"
+                );
+            }
+            return errorResponse(
+                Errors.INTERNAL_SERVER_ERROR,
+                "Failed to leave the room"
             );
         }
 
