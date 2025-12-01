@@ -20,7 +20,7 @@
         "migrate:new": "drizzle-kit generate",
         "migrate:dev": "wrangler d1 migrations apply DB --local",
         "migrate:prod": "wrangler d1 migrations apply DB --remote",
-        "seed": "npm run worker:run ./src/db/seed.ts"
+        "seed": "curl -s -X POST http://localhost:5173/api/v1/dev/seed"
     },
     "dependencies": {
         "@simplewebauthn/browser": "^13.2.2",

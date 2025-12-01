@@ -85,7 +85,7 @@ export default function DmChatScreen({
 
                 {!loading && messages.length === 0 && !error && (
                     <p className="text-sm text-gray-500">
-                        No messages yet - say something exrtaordinary!
+                        No messages yet - say something extraordinary!
                     </p>
                 )}
 

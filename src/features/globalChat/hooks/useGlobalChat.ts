@@ -32,6 +32,8 @@ export function useGlobalChat(initialMessages: GlobalChatMessage[] = []) {
         if (initialMessages.length > 0) {
             setMessages(initialMessages);
             setLoading(false);
+        } else {
+            loadMessages();
         }
     }, [initialMessages]);
 
