@@ -10,7 +10,7 @@
     "private": true,
     "scripts": {
         "build": "vite build",
-        "dev": "NODE_ENV=${NODE_ENV:-development} vite dev",
+        "dev": "cross-env NODE_ENV=${NODE_ENV:-development} vite dev",
         "dev:init": "rw-scripts dev-init",
         "preview": "vite preview",
         "worker:run": "rw-scripts worker-run",
@@ -47,6 +47,7 @@
         "@types/react-dom": "^19.2.2",
         "@vitejs/plugin-react": "^5.0.4",
         "babel-plugin-react-compiler": "19.1.0-rc.3",
+        "cross-env": "^10.1.0",
         "drizzle-kit": "^0.31.5",
         "tsx": "^4.20.6",
         "typescript": "^5.9.3",
