@@ -5,10 +5,13 @@ import { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useFetch } from "@/app/hooks/useFetch";
 import { links } from "@/app/links";
-import FormField from "@/app/components/FormField";
-import PrimaryButton from "@/app/components/PrimaryButton";
-import CampusChatAllroundButton from "@/features/profile/components/CampusChatAllroundButton";
 import SideBar from "@/features/profile/components/SideBar";
+import ProfileHeader from "@/features/profile/components/ProfileHeader";
+import ProfilePictureSection from "@/features/profile/components/ProfilePictureSection";
+import ProfileInfoSection from "@/features/profile/components/ProfileInfoSection";
+import PasswordSection from "@/features/profile/components/PasswordSection";
+import EmailSection from "@/features/profile/components/EmailSection";
+import NotificationsSection from "@/features/profile/components/NotificationsSection";
 
 type ProfileResponse = {
     email: string;
@@ -17,9 +20,6 @@ type ProfileResponse = {
     avatarUrl?: string;
     notificationsEnabled?: boolean;
 };
-
-const chipButtonClass =
-    "cursor-pointer inline-flex items-center px-3 py-1.5 text-xs font-medium border rounded-full theme-text-color border-current hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary-color)]";
 
 type SettingsSectionProps = {
     title: string;
@@ -393,34 +393,11 @@ export default function Profile() {
 
             <main className="flex-1 px-4 py-6 md:px-8 md:py-8 lg:px-10 lg:py-10 overflow-y-auto">
                 <div className="max-w-5xl mx-auto space-y-8">
-                    <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
-                                Account
-                            </p>
-                            <h1 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
-                                Profile Settings
-                            </h1>
-                            <p className="mt-2 text-sm text-gray-500 max-w-xl">
-                                Update your personal details, security settings,
-                                and how we contact you.
-                            </p>
-                        </div>
-
-                        <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl px-4 py-3 shadow-sm">
-                            <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-xs font-semibold theme-text-color">
-                                {userInitial}
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-sm font-medium text-gray-900 truncate max-w-40 md:max-w-[220px]">
-                                    {displayName || user.email}
-                                </span>
-                                <span className="text-xs text-gray-500 truncate max-w-40 md:max-w-[220px]">
-                                    {email}
-                                </span>
-                            </div>
-                        </div>
-                    </header>
+                    <ProfileHeader
+                        displayName={displayName}
+                        email={email}
+                        userInitial={userInitial}
+                    />
 
                     <div className="grid gap-6 grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
                         <div className="space-y-6">
@@ -428,279 +405,66 @@ export default function Profile() {
                                 title="Profile picture"
                                 subtitle="A clear photo makes it easier for others to recognize you."
                             >
-                                <div className="flex items-center gap-5">
-                                    <div className="relative h-20 w-20 md:h-24 md:w-24 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-lg md:text-2xl font-semibold text-gray-500 ring-2 ring-white shadow-sm">
-                                        {avatarUrl ? (
-                                            <img
-                                                src={avatarUrl}
-                                                alt="Profile avatar"
-                                                className="h-full w-full object-cover"
-                                            />
-                                        ) : (
-                                            <span>{userInitial}</span>
-                                        )}
-                                    </div>
-
-                                    <div className="flex-1 space-y-2">
-                                        <p className="text-sm text-gray-600">
-                                            JPG or PNG, max 5MB
-                                        </p>
-                                        <div className="flex flex-wrap itemscenter gap-3">
-                                            <input
-                                                ref={fileInputRef}
-                                                type="file"
-                                                accept="image/jpeg,image/png"
-                                                className="hidden"
-                                                onChange={handleFileChange}
-                                            />
-
-                                            <CampusChatAllroundButton
-                                                size="small"
-                                                onClick={handleAvatarClick}
-                                                disabled={uploadingAvatar}
-                                                className="cursor-pointer"
-                                            >
-                                                {uploadingAvatar
-                                                    ? "Uploading..."
-                                                    : "Change picture"}
-                                            </CampusChatAllroundButton>
-                                            {avatarUrl && (
-                                                <span className="text-xs text-gray-400">
-                                                    Click to replace your
-                                                    current photo
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                                <ProfilePictureSection
+                                    avatarUrl={avatarUrl}
+                                    userInitial={userInitial}
+                                    uploadingAvatar={uploadingAvatar}
+                                    onFileChange={handleFileChange}
+                                />
                             </SettingsSection>
 
                             <SettingsSection
                                 title="Profile info"
                                 subtitle="Basic public information others can see."
                             >
-                                <form
-                                    className="space-y-4"
+                                <ProfileInfoSection
+                                    displayName={displayName}
+                                    setDisplayName={setDisplayName}
+                                    status={status}
+                                    setStatus={setStatus}
+                                    isEditingName={isEditingName}
+                                    setIsEditingName={setIsEditingName}
+                                    isEditingStatus={isEditingStatus}
+                                    setIsEditingStatus={setIsEditingStatus}
+                                    originalDisplayName={originalDisplayName}
+                                    originalStatus={originalStatus}
+                                    loading={loading}
                                     onSubmit={handleSaveProfileInfo}
-                                >
-                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                                        <div className="flex-1">
-                                            {!isEditingName ? (
-                                                <>
-                                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                                        Name
-                                                    </p>
-                                                    <p className="mt-1 textsm text-gray-900">
-                                                        {displayName ||
-                                                            "No name set"}
-                                                    </p>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <FormField
-                                                        label="New name"
-                                                        name="displayName"
-                                                        value={displayName}
-                                                        onChange={(e) =>
-                                                            setDisplayName(
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        placeholder="Enter your name"
-                                                    />
-                                                </>
-                                            )}
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                if (isEditingName) {
-                                                    setDisplayName(
-                                                        originalDisplayName
-                                                    );
-                                                }
-                                                setIsEditingName(
-                                                    (prev) => !prev
-                                                );
-                                            }}
-                                            className={chipButtonClass}
-                                        >
-                                            {isEditingName
-                                                ? "Cancel"
-                                                : "Change name"}
-                                        </button>
-                                    </div>
-
-                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                                        <div className="flex-1">
-                                            {!isEditingStatus ? (
-                                                <>
-                                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                                        Status
-                                                    </p>
-                                                    <p className="mt-1 text-sm text-gray-900">
-                                                        {status ||
-                                                            "No status set"}
-                                                    </p>
-                                                </>
-                                            ) : (
-                                                <FormField
-                                                    label="New status"
-                                                    name="status"
-                                                    value={status}
-                                                    onChange={(e) =>
-                                                        setStatus(
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    placeholder="Share how you feel or what you do"
-                                                />
-                                            )}
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                if (isEditingStatus) {
-                                                    setStatus(originalStatus);
-                                                }
-                                                setIsEditingStatus(
-                                                    (prev) => !prev
-                                                );
-                                            }}
-                                            className={chipButtonClass}
-                                        >
-                                            {isEditingStatus
-                                                ? "Cancel"
-                                                : "Change status"}
-                                        </button>
-                                    </div>
-
-                                    {(isEditingName || isEditingStatus) && (
-                                        <div className="pt-2">
-                                            <PrimaryButton disabled={loading}>
-                                                {loading
-                                                    ? "Saving..."
-                                                    : "Save changes"}
-                                            </PrimaryButton>
-                                        </div>
-                                    )}
-                                </form>
+                                />
                             </SettingsSection>
 
                             <SettingsSection
                                 title="Password"
                                 subtitle="Keep your account secure."
                             >
-                                {!isEditingPassword ? (
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setIsEditingPassword(true)
-                                        }
-                                        className={chipButtonClass}
-                                    >
-                                        Change password
-                                    </button>
-                                ) : (
-                                    <form
-                                        className="space-y-3"
-                                        onSubmit={handleSavePassword}
-                                    >
-                                        <FormField
-                                            label="Current password"
-                                            name="currentPassword"
-                                            type="password"
-                                            value={currentPassword}
-                                            onChange={(e) => {
-                                                setCurrentPassword(
-                                                    e.target.value
-                                                );
-                                                setCurrentPasswordError(null);
-                                                setPasswordFormError(null);
-                                            }}
-                                            placeholder="Enter your current password"
-                                        />
-                                        {currentPasswordError && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {currentPasswordError}
-                                            </p>
-                                        )}
-
-                                        <FormField
-                                            label="New password"
-                                            name="newPassword"
-                                            type="password"
-                                            value={newPassword}
-                                            onChange={(e) => {
-                                                setNewPassword(e.target.value);
-                                                setNewPasswordError(null);
-                                                setPasswordFormError(null);
-                                            }}
-                                            placeholder="Enter a new password"
-                                        />
-                                        {newPasswordError && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {newPasswordError}
-                                            </p>
-                                        )}
-
-                                        <FormField
-                                            label="Confirm new password"
-                                            name="confirmNewPassword"
-                                            type="password"
-                                            value={confirmNewPassword}
-                                            onChange={(e) => {
-                                                setConfirmNewPassword(
-                                                    e.target.value
-                                                );
-                                                setConfirmNewPasswordError(
-                                                    null
-                                                );
-                                                setPasswordFormError(null);
-                                            }}
-                                            placeholder="Repeat new password"
-                                        />
-                                        {confirmNewPasswordError && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {confirmNewPasswordError}
-                                            </p>
-                                        )}
-
-                                        {passwordFormError && (
-                                            <p className="mt-2 text-xs text-red-500">
-                                                {passwordFormError}
-                                            </p>
-                                        )}
-
-                                        <div className="flex flex-wrap gap-3 pt-1">
-                                            <PrimaryButton disabled={loading}>
-                                                {loading
-                                                    ? "Saving..."
-                                                    : "Save password"}
-                                            </PrimaryButton>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setIsEditingPassword(false);
-                                                    setCurrentPassword("");
-                                                    setNewPassword("");
-                                                    setConfirmNewPassword("");
-                                                    setCurrentPasswordError(
-                                                        null
-                                                    );
-                                                    setNewPasswordError(null);
-                                                    setConfirmNewPasswordError(
-                                                        null
-                                                    );
-                                                    setPasswordFormError(null);
-                                                }}
-                                                className="cursor-pointer text-sm font-medium text-gray-600 hover:underline"
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </form>
-                                )}
+                                <PasswordSection
+                                    isEditingPassword={isEditingPassword}
+                                    setIsEditingPassword={setIsEditingPassword}
+                                    currentPassword={currentPassword}
+                                    setCurrentPassword={setCurrentPassword}
+                                    newPassword={newPassword}
+                                    setNewPassword={setNewPassword}
+                                    confirmNewPassword={confirmNewPassword}
+                                    setConfirmNewPassword={
+                                        setConfirmNewPassword
+                                    }
+                                    currentPasswordError={currentPasswordError}
+                                    setCurrentPasswordError={
+                                        setCurrentPasswordError
+                                    }
+                                    newPasswordError={newPasswordError}
+                                    setNewPasswordError={setNewPasswordError}
+                                    confirmNewPasswordError={
+                                        confirmNewPasswordError
+                                    }
+                                    setConfirmNewPasswordError={
+                                        setConfirmNewPasswordError
+                                    }
+                                    passwordFormError={passwordFormError}
+                                    setPasswordFormError={setPasswordFormError}
+                                    loading={loading}
+                                    onSubmit={handleSavePassword}
+                                />
                             </SettingsSection>
                         </div>
 
@@ -709,132 +473,33 @@ export default function Profile() {
                                 title="Email"
                                 subtitle="Used for login and important updates."
                             >
-                                {!isEditingEmail ? (
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div>
-                                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                                Current email
-                                            </p>
-                                            <p className="mt-1 text-sm font-medium text-gray-900 break-all">
-                                                {email}
-                                            </p>
-                                        </div>
-
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                setIsEditingEmail(true)
-                                            }
-                                            className={chipButtonClass}
-                                        >
-                                            Change email
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <form
-                                        className="space-y-3"
-                                        onSubmit={handleSaveEmail}
-                                    >
-                                        <FormField
-                                            label="New email"
-                                            name="newEmail"
-                                            type="email"
-                                            value={newEmail}
-                                            onChange={(e) => {
-                                                setNewEmail(e.target.value);
-                                                setEmailError(null);
-                                            }}
-                                            placeholder="Enter your new email"
-                                        />
-                                        {emailError && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {emailError}
-                                            </p>
-                                        )}
-
-                                        <FormField
-                                            label="Confirm with password"
-                                            name="emailPassword"
-                                            type="password"
-                                            value={emailPassword}
-                                            onChange={(e) => {
-                                                setEmailPassword(
-                                                    e.target.value
-                                                );
-                                                setEmailPasswordError(null);
-                                            }}
-                                            placeholder="Current password"
-                                        />
-                                        {emailPasswordError && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {emailPasswordError}
-                                            </p>
-                                        )}
-
-                                        <p className="text-xs text-red-500">
-                                            Note: in a real production app you
-                                            would also send a verification email
-                                            and only update the address once it
-                                            has been confirmed.
-                                        </p>
-
-                                        <div className="flex flex-wrap gap-3 pt-1">
-                                            <PrimaryButton disabled={loading}>
-                                                {loading
-                                                    ? "Saving..."
-                                                    : "Save email"}
-                                            </PrimaryButton>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setIsEditingEmail(false);
-                                                    setNewEmail(email);
-                                                    setEmailPassword("");
-                                                    setEmailError(null);
-                                                    setEmailPasswordError(null);
-                                                }}
-                                                className="cursor-pointer text-sm font-medium text-gray-600 hover:underline"
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </form>
-                                )}
+                                <EmailSection
+                                    email={email}
+                                    isEditingEmail={isEditingEmail}
+                                    setIsEditingEmail={setIsEditingEmail}
+                                    newEmail={newEmail}
+                                    setNewEmail={setNewEmail}
+                                    emailPassword={emailPassword}
+                                    setEmailPassword={setEmailPassword}
+                                    emailError={emailError}
+                                    setEmailError={setEmailError}
+                                    emailPasswordError={emailPasswordError}
+                                    setEmailPasswordError={
+                                        setEmailPasswordError
+                                    }
+                                    loading={loading}
+                                    onSubmit={handleSaveEmail}
+                                />
                             </SettingsSection>
 
                             <SettingsSection
                                 title="Notifications"
                                 subtitle="Control when we bother you."
                             >
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={handleToggleNotifications}
-                                            className={`cursor-pointer relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-(--primary-color) ${
-                                                notificationsEnabled
-                                                    ? "theme-bg-color"
-                                                    : "bg-gray-300"
-                                            }`}
-                                        >
-                                            <span
-                                                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                                                    notificationsEnabled
-                                                        ? "translate-x-6"
-                                                        : "translate-x-1"
-                                                }`}
-                                            />
-                                        </button>
-
-                                        <span className="text-sm font-medium text-gray-800">
-                                            Enable notifications
-                                        </span>
-                                    </div>
-                                </div>
-                                <p className="text-xs text-gray-500">
-                                    We'll only send you important updates
-                                    related to your account and activity.
-                                </p>
+                                <NotificationsSection
+                                    notificationsEnabled={notificationsEnabled}
+                                    onToggle={handleToggleNotifications}
+                                />
                             </SettingsSection>
                         </div>
                     </div>
