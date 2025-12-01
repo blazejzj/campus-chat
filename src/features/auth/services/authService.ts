@@ -49,7 +49,10 @@ export const createAuthService = (repo: typeof authRepository) => ({
     }: {
         email: string;
         password: string;
-    }): AsyncResult<{ token: string; user: { id: number; email: string } }> {
+    }): AsyncResult<{
+        token: string;
+        user: { id: number; email: string; displayName?: string };
+    }> {
         const userResult = await repo.findUserByEmail(email);
 
         if (!userResult.ok) {
@@ -67,13 +70,23 @@ export const createAuthService = (repo: typeof authRepository) => ({
             return { ok: false, reason: Errors.WRONG_CREDENTIALS };
         }
 
+        let displayName: string | undefined = undefined;
+        const profileResult = await repo.getProfileByUserId(user.id);
+
+        if (profileResult.ok && profileResult.data?.displayName) {
+            displayName = profileResult.data.displayName;
+        }
         const token = await createJwt({ id: user.id, email: user.email });
 
         return {
             ok: true,
             data: {
                 token,
-                user: { id: user.id, email: user.email },
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    displayName,
+                },
             },
         };
     },

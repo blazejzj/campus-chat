@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/app/hooks/useAuth";
 import RoomsSidebar from "@/features/groups/components/RoomSidebar";
 import GlobalChatScreen from "@/features/globalChat/screens/GlobalChatScreen";
@@ -11,19 +11,28 @@ import FriendsList from "@/features/friends/components/FriendList";
 import NotificationsBell from "@/features/notifications/components/NotificationsBell";
 import RoomChatScreen from "@/features/chat/screens/RoomChatScreen";
 import DmChatScreen from "@/features/chat/screens/DmChatScreen";
+import { useFetch } from "@/app/hooks/useFetch";
 
 type DashboardScreenProps = {
     initialGlobalMessages: GlobalChatMessage[];
     realtimeVersion: number;
 };
 
+type ProfileResponse = {
+    email: string;
+    displayName?: string;
+    status?: string;
+    avatarUrl?: string;
+    notificationsEnabled?: boolean;
+};
 type ActiveChat = "global" | "room" | "friends";
 
 export default function DashboardScreen({
     initialGlobalMessages,
     realtimeVersion,
 }: DashboardScreenProps) {
-    const { user, logout } = useAuth();
+    const { user, logout, updateUser } = useAuth();
+    const { request } = useFetch();
     const [selectedRoomId, setSelectedRoomId] = useState<
         string | number | null
     >(null);
@@ -38,6 +47,29 @@ export default function DashboardScreen({
     // same stuff with friends
     const [friendsReloadToken, setFriendsReloadToken] = useState(0);
 
+    useEffect(() => {
+        async function hydrateUserFromProfile() {
+            try {
+                const data = await request<ProfileResponse>(
+                    links.api.profile.me,
+                    {
+                        credentials: "include",
+                    }
+                );
+
+                updateUser({
+                    email: data.email,
+                    displayName: data.displayName,
+                });
+            } catch (error) {
+                //TODO: error handling here
+            }
+        }
+
+        if (user?.id && !user.displayName) {
+            hydrateUserFromProfile();
+        }
+    }, [user?.id]);
     if (!user) {
         return (
             <div className="flex h-screen items-center justify-center bg-linear-to-br from-gray-50 via-slate-50 to-gray-100">
@@ -52,8 +84,11 @@ export default function DashboardScreen({
             </div>
         );
     }
+    const userDisplayName =
+        user.displayName && user.displayName.trim().length > 0
+            ? user.displayName
+            : null;
 
-    const userDisplayName = user.displayName || null;
     const userName = userDisplayName || user.email.split("@")[0];
 
     const userInitial =

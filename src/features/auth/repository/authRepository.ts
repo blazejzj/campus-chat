@@ -137,6 +137,28 @@ export const createAuthRepository = (dbInstance: typeof db) => ({
             };
         }
     },
+
+    async getProfileByUserId(
+        userId: number
+    ): AsyncResult<{ displayName: string | null } | null> {
+        try {
+            const [row] = await dbInstance
+                .select({ displayName: profiles.displayName })
+                .from(profiles)
+                .where(eq(profiles.userId, userId))
+                .limit(1);
+
+            return {
+                ok: true,
+                data: row ?? null,
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                reason: Errors.DATABASE_ERROR,
+            };
+        }
+    },
 });
 
 export const authRepository = createAuthRepository(db);
