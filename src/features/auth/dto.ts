@@ -9,7 +9,7 @@ const passwordSchema = z
 
 // TODO: This could potentially be scrapepd at some point, i make it
 // because this will wokr with older rules where it wanst required to have atleast
-// 1 special symbol and a number
+// 1 number
 const loginPasswordSchema = z
     .string()
     .min(8, "Password must be at least 8 characters long");

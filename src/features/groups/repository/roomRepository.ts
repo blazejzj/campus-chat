@@ -346,6 +346,22 @@ export const createRoomRepository = (dbInstace: typeof db) => ({
             return { ok: false, reason: Errors.DATABASE_ERROR };
         }
     },
+
+    async removeRoomMember(roomId: number, userId: number): AsyncResult<null> {
+        try {
+            await dbInstace
+                .delete(roomMemberships)
+                .where(
+                    and(
+                        eq(roomMemberships.roomId, roomId),
+                        eq(roomMemberships.userId, userId)
+                    )
+                );
+            return { ok: true, data: null };
+        } catch (error) {
+            return { ok: false, reason: Errors.DATABASE_ERROR };
+        }
+    },
 });
 
 export const roomRepository = createRoomRepository(db);

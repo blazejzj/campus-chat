@@ -36,6 +36,8 @@ export default function RoomDetailsPanel({
     const [loadingMembers, setLoadingMembers] = useState(false);
     const [membersError, setMembersError] = useState<string | null>(null);
 
+    const [leaving, setLeaving] = useState(false);
+
     const loadMembers = useCallback(async () => {
         setLoadingMembers(true);
         setMembersError(null);
@@ -54,7 +56,6 @@ export default function RoomDetailsPanel({
                 setMembers([]);
             }
         } catch (err: any) {
-            console.error("Error loading room members:", err);
             setMembersError(err.message || "Failed to load room members");
             setMembers([]);
         } finally {
@@ -81,7 +82,6 @@ export default function RoomDetailsPanel({
 
             onDeleted(roomId);
         } catch (err: any) {
-            console.error("Error deleting room:", err);
             setError(err.message || "Could not delete room");
         } finally {
             setDeleting(false);
@@ -107,10 +107,33 @@ export default function RoomDetailsPanel({
             setInviteMessage("Invitation sent");
             setInviteEmail("");
         } catch (err: any) {
-            console.error("Error sending invite:", err);
             setError(err.message || "Could not send invitation");
         } finally {
             setInviting(false);
+        }
+    };
+
+    const handleLeave = async () => {
+        // we dont want admins to leave the room
+        if (canDelete || leaving) return;
+
+        setError("");
+        setInviteMessage(null);
+
+        try {
+            setLeaving(false);
+            await request(`${API_BASE_PATH}/${roomId}/leave`, {
+                method: "POST",
+                credentials: "include",
+            });
+
+            // honestly, from UI perspective, "leave" is the same as "room removed from my list"
+            // so i'll use it xD
+            onDeleted(roomId);
+        } catch (err: any) {
+            setError(err.msg || "Could not leave room");
+        } finally {
+            setLeaving(false);
         }
     };
 
@@ -147,7 +170,7 @@ export default function RoomDetailsPanel({
                 ))}
             </ul>
 
-            {canDelete && (
+            {canDelete ? (
                 <>
                     <form onSubmit={handleInvite} className="mb-3">
                         <label className="block text-[11px] font-semibold text-gray-600 mb-1">
@@ -199,6 +222,24 @@ export default function RoomDetailsPanel({
                     >
                         {deleting || loading ? "Deleting..." : "Delete Room"}
                     </button>
+                </>
+            ) : (
+                <>
+                    {error && (
+                        <p className="text-[11px] text-red-600 mb-2 font-medium">
+                            {error}
+                        </p>
+                    )}
+                    <div className="flex justify-end">
+                        <button
+                            type="button"
+                            onClick={handleLeave}
+                            disabled={leaving || loading}
+                            className="cursor-pointer rounded-lg border border-red-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-red-500 hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {leaving || loading ? "Leaving…" : "Leave room"}{" "}
+                        </button>
+                    </div>
                 </>
             )}
         </div>
