@@ -40,9 +40,10 @@ export const createAuthController = (service: typeof authService) => {
 
             const parsed = LoginDto.safeParse(await ctx.request.json());
             if (!parsed.success) {
+                const firstError = parsed.error.issues[0];
                 return errorResponse(
                     Errors.VALIDATION_ERROR,
-                    "Invalid request body"
+                    firstError?.message || "Invalid email or password format"
                 );
             }
 
@@ -98,9 +99,11 @@ export const createAuthController = (service: typeof authService) => {
 
             const parsed = RegisterDto.safeParse(await ctx.request.json());
             if (!parsed.success) {
+                const firstError = parsed.error.issues[0];
                 return errorResponse(
                     Errors.VALIDATION_ERROR,
-                    "Invalid request body"
+                    firstError?.message ||
+                        "Please check your registration details!"
                 );
             }
             const { email, password, displayName } = parsed.data;
