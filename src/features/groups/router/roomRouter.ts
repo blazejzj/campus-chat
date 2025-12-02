@@ -13,6 +13,7 @@ export const createRoomRoutes = (
     route("/groups/:roomId/members", controller.getRoomMembers),
     route("/groups/:roomId/invite/accept", controller.acceptInvite),
     route("/groups/:roomId/invite/decline", controller.declineInvite),
+    route("/groups/:roomId/leave", controller.leaveRoom),
 ];
 
 export const roomRoutes = createRoomRoutes(roomController);

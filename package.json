@@ -10,7 +10,7 @@
     "private": true,
     "scripts": {
         "build": "vite build",
-        "dev": "NODE_ENV=${NODE_ENV:-development} vite dev",
+        "dev": "cross-env NODE_ENV=${NODE_ENV:-development} vite dev",
         "dev:init": "rw-scripts dev-init",
         "preview": "vite preview",
         "worker:run": "rw-scripts worker-run",
@@ -20,7 +20,9 @@
         "migrate:new": "drizzle-kit generate",
         "migrate:dev": "wrangler d1 migrations apply DB --local",
         "migrate:prod": "wrangler d1 migrations apply DB --remote",
-        "seed": "npm run worker:run ./src/db/seed.ts"
+        "seed": "curl -s -X POST http://localhost:5173/api/v1/dev/seed",
+        "test": "vitest",
+        "test:ci": "vitest run"
     },
     "dependencies": {
         "@simplewebauthn/browser": "^13.2.2",
@@ -42,16 +44,22 @@
     "devDependencies": {
         "@cloudflare/vite-plugin": "1.13.10",
         "@cloudflare/workers-types": "^4.20251014.0",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.0",
+        "@testing-library/user-event": "^14.6.1",
         "@types/node": "^22.18.12",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.2",
         "@vitejs/plugin-react": "^5.0.4",
         "babel-plugin-react-compiler": "19.1.0-rc.3",
+        "cross-env": "^10.1.0",
         "drizzle-kit": "^0.31.5",
+        "jsdom": "^27.2.0",
         "tsx": "^4.20.6",
         "typescript": "^5.9.3",
         "vibe-rules": "^0.2.57",
         "vite": "^7.1.11",
+        "vitest": "^4.0.14",
         "wrangler": "~4.42.2"
     },
     "pnpm": {

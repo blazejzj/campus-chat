@@ -11,7 +11,7 @@ import { navigate } from "rwsdk/client";
 
 type LoginResponse = {
     // token: string;
-    user: { id: number; email: string };
+    user: { id: number; email: string; displayName?: string };
 };
 
 export default function Login() {

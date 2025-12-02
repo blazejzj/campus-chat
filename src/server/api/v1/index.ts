@@ -6,6 +6,7 @@ import friendsRoutes from "@/features/friends/routes/friendsRoutes";
 import { dmChatRoutes } from "@/features/chat/routes/dmChatRoutes";
 import roomChatRoutes from "@/features/chat/routes/roomChatRoutes";
 import globalChatRoutes from "@/features/globalChat/router/globalChatRoutes";
+import devSeedRoutes from "./devSeedRoutes";
 
 export const apiV1Routes = [
     ...authRoutes,
@@ -16,4 +17,8 @@ export const apiV1Routes = [
     ...friendsRoutes,
     ...dmChatRoutes,
     ...roomChatRoutes,
+
+    // this is only for seeding!
+    // probably not something we'd do in real scenario!
+    ...devSeedRoutes,
 ];

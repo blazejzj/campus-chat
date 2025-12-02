@@ -58,28 +58,6 @@ export default function DmChatScreen({
         setBody("");
     };
 
-    const handleRemoveFriend = async () => {
-        if (removing) return;
-
-        setRemoveError(null);
-        try {
-            setRemoving(true);
-            await request(links.api.friends.friends + "?friendId=" + friendId, {
-                method: "DELETE",
-                credentials: "include",
-            });
-
-            // for now we just refresh, potentially could update somehow else
-            window.location.reload();
-        } catch (err: any) {
-            setRemoveError(
-                err?.message || "Failed to remove friend. Try again please"
-            );
-        } finally {
-            setRemoving(false);
-        }
-    };
-
     return (
         <section className="flex h-full flex-col">
             <header className="border-b border-gray-100 px-4 py-3 bg-white/90">
@@ -91,18 +69,6 @@ export default function DmChatScreen({
                         Private chat between you and your friend.
                     </p>
                 </div>
-                <button
-                    type="button"
-                    onClick={handleRemoveFriend}
-                    disabled={removing}
-                    className={`cursor-pointer rounded-full border px-3 py-1.5 text-[11px] font-semibold shadow-sm transition ${
-                        removing
-                            ? "border-red-300 bg-red-100 text-red-400 cursor-not-allowed"
-                            : "border-red-200 bg-white text-red-600 hover:bg-red-50"
-                    }`}
-                >
-                    {removing ? "Removing…" : "Remove friend"}
-                </button>
             </header>
 
             {removeError && (
@@ -119,7 +85,7 @@ export default function DmChatScreen({
 
                 {!loading && messages.length === 0 && !error && (
                     <p className="text-sm text-gray-500">
-                        No messages yet - say something exrtaordinary!
+                        No messages yet - say something extraordinary!
                     </p>
                 )}
 

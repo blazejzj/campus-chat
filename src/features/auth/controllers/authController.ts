@@ -6,6 +6,7 @@ import type { RequestInfo } from "rwsdk/worker";
 import { isProd } from "@/app/utils/isProd";
 import { errorResponse, methodNotAllowed } from "@/app/utils/errorHandler";
 import { Errors } from "../../../app/types/errors";
+import { ZodError } from "zod";
 
 const AUTH_COOKIE_NAME = "auth";
 
@@ -29,6 +30,18 @@ function clearAuthCookie() {
     });
 }
 
+// TODO: could potentially move to util
+function formatZodError(err: ZodError): string {
+    if (!err.issues?.length) {
+        return "Invalid request body";
+    }
+
+    // take always the first fail zod found, show it so users
+    // can fix it 1 by 1
+    const first = err.issues[0];
+    return first.message || "Invalid request body";
+}
+
 export const createAuthController = (service: typeof authService) => {
     return {
         async login(ctx: RequestInfo): Promise<Response> {
@@ -40,11 +53,16 @@ export const createAuthController = (service: typeof authService) => {
 
             const parsed = LoginDto.safeParse(await ctx.request.json());
             if (!parsed.success) {
+<<<<<<< HEAD
                 const firstError = parsed.error.issues[0];
                 return errorResponse(
                     Errors.VALIDATION_ERROR,
                     firstError?.message || "Invalid email or password format"
                 );
+=======
+                const friendlyMessage = formatZodError(parsed.error);
+                return errorResponse(Errors.VALIDATION_ERROR, friendlyMessage);
+>>>>>>> main
             }
 
             const result = await service.loginUser(parsed.data);
@@ -99,12 +117,17 @@ export const createAuthController = (service: typeof authService) => {
 
             const parsed = RegisterDto.safeParse(await ctx.request.json());
             if (!parsed.success) {
+<<<<<<< HEAD
                 const firstError = parsed.error.issues[0];
                 return errorResponse(
                     Errors.VALIDATION_ERROR,
                     firstError?.message ||
                         "Please check your registration details!"
                 );
+=======
+                const friendlyMessage = formatZodError(parsed.error);
+                return errorResponse(Errors.VALIDATION_ERROR, friendlyMessage);
+>>>>>>> main
             }
             const { email, password, displayName } = parsed.data;
             const result = await service.registerUser({
