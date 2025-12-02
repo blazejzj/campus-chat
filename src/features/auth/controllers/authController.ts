@@ -53,16 +53,8 @@ export const createAuthController = (service: typeof authService) => {
 
             const parsed = LoginDto.safeParse(await ctx.request.json());
             if (!parsed.success) {
-<<<<<<< HEAD
-                const firstError = parsed.error.issues[0];
-                return errorResponse(
-                    Errors.VALIDATION_ERROR,
-                    firstError?.message || "Invalid email or password format"
-                );
-=======
                 const friendlyMessage = formatZodError(parsed.error);
                 return errorResponse(Errors.VALIDATION_ERROR, friendlyMessage);
->>>>>>> main
             }
 
             const result = await service.loginUser(parsed.data);
@@ -117,17 +109,8 @@ export const createAuthController = (service: typeof authService) => {
 
             const parsed = RegisterDto.safeParse(await ctx.request.json());
             if (!parsed.success) {
-<<<<<<< HEAD
-                const firstError = parsed.error.issues[0];
-                return errorResponse(
-                    Errors.VALIDATION_ERROR,
-                    firstError?.message ||
-                        "Please check your registration details!"
-                );
-=======
                 const friendlyMessage = formatZodError(parsed.error);
                 return errorResponse(Errors.VALIDATION_ERROR, friendlyMessage);
->>>>>>> main
             }
             const { email, password, displayName } = parsed.data;
             const result = await service.registerUser({
