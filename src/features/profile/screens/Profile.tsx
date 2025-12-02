@@ -9,7 +9,7 @@ import SideBar from "@/features/profile/components/SideBar";
 import ProfileHeader from "@/features/profile/components/ProfileHeader";
 import ProfilePictureSection from "@/features/profile/components/ProfilePictureSection";
 import ProfileInfoSection from "@/features/profile/components/ProfileInfoSection";
-import PasswordSection from "@/features/profile/components/PasswordSection";
+import PasswordSection from "@/features/profile/components/PassWordSection";
 import EmailSection from "@/features/profile/components/EmailSection";
 import NotificationsSection from "@/features/profile/components/NotificationsSection";
 

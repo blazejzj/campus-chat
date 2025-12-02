@@ -1,3 +1,5 @@
+import { links } from "@/app/links";
+
 type ProfileHeaderProps = {
     displayName: string;
     email: string;
@@ -11,6 +13,14 @@ export default function ProfileHeader({
 }: ProfileHeaderProps) {
     return (
         <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <a
+                href={links.pages.dashboard}
+                className="lg:hidden inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-full border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm w-fit mb-2"
+            >
+                <span aria-hidden>←</span>
+                <span>Back</span>
+            </a>
+
             <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
                     Account
